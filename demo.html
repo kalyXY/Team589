@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Démonstration - Module Gestion des Stocks Scolaria</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9fafb;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .demo-section {
+            background: white;
+            margin: 2rem 0;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+        
+        .feature-card {
+            background: #f8fafc;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border-left: 4px solid #2563eb;
+        }
+        
+        .feature-card h3 {
+            color: #2563eb;
+            margin-bottom: 1rem;
+        }
+        
+        .screenshot {
+            width: 100%;
+            height: 300px;
+            background: linear-gradient(45deg, #e5e7eb 25%, transparent 25%), 
+                        linear-gradient(-45deg, #e5e7eb 25%, transparent 25%), 
+                        linear-gradient(45deg, transparent 75%, #e5e7eb 75%), 
+                        linear-gradient(-45deg, transparent 75%, #e5e7eb 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+            border: 2px dashed #9ca3af;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6b7280;
+            font-style: italic;
+            margin: 1rem 0;
+        }
+        
+        .tech-stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .tech-badge {
+            background: #2563eb;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #2563eb;
+            display: block;
+        }
+        
+        .stat-label {
+            color: #6b7280;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+        
+        .btn {
+            display: inline-block;
+            background: #2563eb;
+            color: white;
+            padding: 1rem 2rem;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.2s;
+            margin: 0.5rem;
+        }
+        
+        .btn:hover {
+            background: #1d4ed8;
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: #6b7280;
+        }
+        
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+        
+        .code-block {
+            background: #1f2937;
+            color: #f9fafb;
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1rem 0;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .highlight {
+            background: #fef3c7;
+            padding: 1rem;
+            border-left: 4px solid #f59e0b;
+            border-radius: 0 8px 8px 0;
+            margin: 1rem 0;
+        }
+        
+        @media (max-width: 768px) {
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .header h1 {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎯 Démonstration - Module Gestion des Stocks</h1>
+        <p><strong>Scolaria (Team589)</strong> - Application de gestion de logistique scolaire</p>
+    </div>
+
+    <div class="demo-section">
+        <h2>🚀 Vue d'ensemble</h2>
+        <p>Le module de gestion des stocks Scolaria est une solution complète développée pour gérer efficacement l'inventaire d'établissements scolaires. Cette application web moderne offre une interface intuitive et des fonctionnalités avancées pour le suivi des articles, la gestion des seuils d'alerte et l'historique complet des mouvements.</p>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <span class="stat-number">100%</span>
+                <div class="stat-label">Responsive</div>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">8</span>
+                <div class="stat-label">Fonctionnalités</div>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">2</span>
+                <div class="stat-label">Tables SQL</div>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">500+</span>
+                <div class="stat-label">Lignes de code</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="demo-section">
+        <h2>💻 Stack Technique</h2>
+        <div class="tech-stack">
+            <span class="tech-badge">PHP 7.4+</span>
+            <span class="tech-badge">MySQL 5.7+</span>
+            <span class="tech-badge">HTML5</span>
+            <span class="tech-badge">CSS3</span>
+            <span class="tech-badge">JavaScript ES6</span>
+            <span class="tech-badge">jQuery 3.6</span>
+            <span class="tech-badge">Font Awesome</span>
+            <span class="tech-badge">PDO</span>
+        </div>
+    </div>
+
+    <div class="demo-section">
+        <h2>🎨 Captures d'écran</h2>
+        
+        <h3>Interface principale - Liste des articles</h3>
+        <div class="screenshot">
+            📊 Tableau des stocks avec recherche en temps réel<br>
+            Colonnes : ID | Nom | Catégorie | Quantité | Seuil | Date | Actions<br>
+            Alertes visuelles pour les stocks faibles
+        </div>
+        
+        <h3>Modal d'ajout/modification d'article</h3>
+        <div class="screenshot">
+            📝 Formulaire modal responsive<br>
+            Champs : Nom, Catégorie, Quantité, Seuil<br>
+            Validation en temps réel
+        </div>
+        
+        <h3>Historique des mouvements</h3>
+        <div class="screenshot">
+            📈 Tableau de l'historique complet<br>
+            Colonnes : Date | Action | Article | Détails | Utilisateur<br>
+            Badges colorés par type d'action
+        </div>
+    </div>
+
+    <div class="demo-section">
+        <h2>✨ Fonctionnalités principales</h2>
+        
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h3>📋 Gestion des Articles</h3>
+                <ul>
+                    <li>Liste complète avec pagination</li>
+                    <li>Ajout via formulaire modal</li>
+                    <li>Modification en place</li>
+                    <li>Suppression avec confirmation</li>
+                    <li>Validation des données</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>🔍 Recherche Avancée</h3>
+                <ul>
+                    <li>Recherche en temps réel</li>
+                    <li>Filtre par catégorie</li>
+                    <li>Filtre stock faible</li>
+                    <li>Tri par colonnes</li>
+                    <li>Résultats instantanés</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>⚠️ Alertes Intelligentes</h3>
+                <ul>
+                    <li>Seuils configurables</li>
+                    <li>Alertes visuelles</li>
+                    <li>Badges d'avertissement</li>
+                    <li>Mise en évidence des lignes</li>
+                    <li>Notifications contextuelles</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>📊 Historique Complet</h3>
+                <ul>
+                    <li>Traçabilité totale</li>
+                    <li>Horodatage précis</li>
+                    <li>Détails des modifications</li>
+                    <li>Identification utilisateur</li>
+                    <li>Actions typées et colorées</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>📱 Interface Responsive</h3>
+                <ul>
+                    <li>Design mobile-first</li>
+                    <li>Adaptation automatique</li>
+                    <li>Navigation tactile</li>
+                    <li>Optimisation tablette</li>
+                    <li>Accessibilité renforcée</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>🔒 Sécurité Renforcée</h3>
+                <ul>
+                    <li>Requêtes préparées PDO</li>
+                    <li>Échappement HTML</li>
+                    <li>Validation côté serveur</li>
+                    <li>Protection XSS</li>
+                    <li>Sessions sécurisées</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="demo-section">
+        <h2>🛠️ Installation rapide</h2>
+        
+        <div class="highlight">
+            <strong>⚡ Installation en 5 minutes !</strong><br>
+            Suivez le guide d'installation dans le README.md pour déployer rapidement l'application.
+        </div>
+        
+        <h3>Étapes d'installation :</h3>
+        <ol>
+            <li><strong>Démarrer XAMPP</strong> - Lancer Apache et MySQL</li>
+            <li><strong>Créer la base</strong> - Exécuter database.sql dans phpMyAdmin</li>
+            <li><strong>Déployer les fichiers</strong> - Copier dans htdocs/</li>
+            <li><strong>Tester</strong> - Accéder à test_connection.php</li>
+            <li><strong>Utiliser</strong> - Ouvrir stocks.php</li>
+        </ol>
+        
+        <div class="code-block">
+# URL d'accès après installation
+http://localhost/scolaria-stocks/stocks.php
+
+# Test de configuration
+http://localhost/scolaria-stocks/test_connection.php
+        </div>
+    </div>
+
+    <div class="demo-section">
+        <h2>📈 Données de démonstration</h2>
+        
+        <p>L'application inclut un jeu de données fictives pour tester immédiatement les fonctionnalités :</p>
+        
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h3>📦 Articles d'exemple</h3>
+                <ul>
+                    <li>Cahiers 100 pages (150 unités)</li>
+                    <li>Stylos bleus (85 unités) ⚠️</li>
+                    <li>Calculatrices (25 unités)</li>
+                    <li>Feuilles A4 (200 unités)</li>
+                    <li>Et 4 autres articles...</li>
+                </ul>
+            </div>
+            
+            <div class="feature-card">
+                <h3>📋 Catégories</h3>
+                <ul>
+                    <li>Papeterie</li>
+                    <li>Matériel scolaire</li>
+                    <li>Matériel enseignant</li>
+                    <li>Manuels</li>
+                    <li>Mobilier</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="demo-section">
+        <h2>🎯 Cas d'usage</h2>
+        
+        <h3>Scénarios d'utilisation typiques :</h3>
+        
+        <div class="feature-card">
+            <h4>📚 Gestionnaire d'école</h4>
+            <p>Suivi quotidien des fournitures, gestion des commandes, alertes sur les stocks faibles.</p>
+        </div>
+        
+        <div class="feature-card">
+            <h4>👩‍🏫 Secrétaire pédagogique</h4>
+            <p>Distribution de matériel aux classes, mise à jour des quantités, historique des sorties.</p>
+        </div>
+        
+        <div class="feature-card">
+            <h4>👨‍💼 Directeur d'établissement</h4>
+            <p>Vue d'ensemble des stocks, analyse des tendances, optimisation des achats.</p>
+        </div>
+    </div>
+
+    <div class="demo-section">
+        <h2>🚀 Évolutions possibles</h2>
+        
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h3>🔐 Authentification</h3>
+                <p>Système de connexion utilisateur avec rôles et permissions différenciées.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>📊 Tableaux de bord</h3>
+                <p>Graphiques de consommation, statistiques d'usage, prévisions de stocks.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>📧 Notifications</h3>
+                <p>Alertes par email, rappels automatiques, notifications push.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>📄 Exports</h3>
+                <p>Export PDF, Excel, CSV pour rapports et analyses externes.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>🏪 Fournisseurs</h3>
+                <p>Gestion des fournisseurs, commandes automatiques, suivi des livraisons.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>📱 API Mobile</h3>
+                <p>Interface REST pour applications mobiles et intégrations tierces.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="demo-section">
+        <h2>📞 Support et Documentation</h2>
+        
+        <p>Pour toute question ou assistance :</p>
+        
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h3>📖 Documentation</h3>
+                <p>README.md complet avec guide d'installation, configuration et utilisation.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>🧪 Tests</h3>
+                <p>Script test_connection.php pour vérifier l'installation et diagnostiquer les problèmes.</p>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin: 2rem 0;">
+            <a href="stocks.php" class="btn">🚀 Accéder à l'application</a>
+            <a href="test_connection.php" class="btn btn-secondary">🧪 Tester la configuration</a>
+        </div>
+    </div>
+
+    <div class="demo-section" style="text-align: center; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white;">
+        <h2>🎓 Team589 - Scolaria</h2>
+        <p>Module de gestion de logistique scolaire</p>
+        <p><strong>Version 1.0</strong> - Solution complète et prête à l'emploi</p>
+        <p><em>Développé avec ❤️ pour l'éducation</em></p>
+    </div>
+</body>
+</html>
