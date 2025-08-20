@@ -50,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     setcookie(session_name(), session_id(), time() + (30 * 24 * 60 * 60), '/', '', isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on', true);
                 }
 
-                header('Location: ' . BASE_URL . 'dashboard-modern.php');
+                header('Location: ' . BASE_URL . 'dashboard.php');
                 exit;
             }
 
@@ -72,11 +72,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>Connexion - Scolaria</title>
     
     <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="/assets/images/favicon.ico">
+    <link rel="icon" type="image/x-icon" href="<?php echo BASE_URL; ?>assets/images/favicon.ico">
     
     <!-- CSS -->
-    <link rel="stylesheet" href="/assets/css/style.css">
-    <link rel="stylesheet" href="/assets/css/components.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/css/style.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/css/components.css">
     
     <!-- Styles spécifiques à la page de connexion -->
     <style>
@@ -334,7 +334,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
     
     <!-- JavaScript -->
-    <script src="/assets/js/main.js"></script>
+    <script src="<?php echo BASE_URL; ?>assets/js/main.js"></script>
     <script>
         // Fonction pour basculer la visibilité du mot de passe
         function togglePassword() {
