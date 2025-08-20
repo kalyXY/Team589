@@ -26,7 +26,7 @@ if (ini_get('session.use_cookies')) {
 // Destroy the session
 session_destroy();
 
-// Redirect to login
+// Redirect to modern login
 header('Location: ' . BASE_URL . 'login.php');
 exit;
 

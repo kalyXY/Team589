@@ -1,0 +1,680 @@
+/* ========================================
+   SCOLARIA - COMPOSANTS SPÉCIALISÉS
+   ======================================== */
+
+/* ========================================
+   NOTIFICATIONS TOAST
+   ======================================== */
+
+.notification-toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    min-width: 300px;
+    max-width: 500px;
+    z-index: 9999;
+    transform: translateX(100%);
+    transition: all var(--transition-normal);
+    box-shadow: var(--shadow-lg);
+}
+
+.notification-toast.show {
+    transform: translateX(0);
+}
+
+.notification-toast .alert-close {
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    padding: 0.25rem;
+    margin-left: auto;
+    opacity: 0.7;
+    transition: opacity var(--transition-fast);
+}
+
+.notification-toast .alert-close:hover {
+    opacity: 1;
+}
+
+/* ========================================
+   DROPDOWN MENUS
+   ======================================== */
+
+.user-dropdown,
+.notifications-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-lg);
+    min-width: 200px;
+    z-index: 1000;
+    display: none;
+    overflow: hidden;
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+    border-bottom: 1px solid var(--border-light);
+}
+
+.dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.dropdown-item:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.dropdown-item i {
+    width: 16px;
+    text-align: center;
+}
+
+.dropdown-divider {
+    height: 1px;
+    background: var(--border-color);
+    margin: 0.5rem 0;
+}
+
+/* ========================================
+   NOTIFICATIONS DROPDOWN
+   ======================================== */
+
+.notifications {
+    position: relative;
+}
+
+.notification-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: var(--error-color);
+    color: var(--text-white);
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.2rem 0.5rem;
+    border-radius: 10px;
+    min-width: 18px;
+    text-align: center;
+    line-height: 1;
+}
+
+.notifications-dropdown {
+    width: 350px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.notifications-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-light);
+    background: var(--bg-tertiary);
+}
+
+.notifications-header h4 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.notifications-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.notification-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-light);
+    transition: background-color var(--transition-fast);
+}
+
+.notification-item:hover {
+    background: var(--bg-tertiary);
+}
+
+.notification-item.unread {
+    background: rgba(30, 136, 229, 0.05);
+    border-left: 3px solid var(--primary-color);
+}
+
+.notification-item i {
+    margin-top: 0.25rem;
+    font-size: 1.1rem;
+}
+
+.notification-item div {
+    flex: 1;
+}
+
+.notification-item p {
+    margin: 0 0 0.25rem 0;
+    font-weight: 500;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
+
+.notification-item small {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+/* ========================================
+   BREADCRUMB
+   ======================================== */
+
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+}
+
+.breadcrumb-link {
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+}
+
+.breadcrumb-link:hover {
+    color: var(--primary-color);
+}
+
+.breadcrumb-current {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.breadcrumb i {
+    color: var(--text-muted);
+    font-size: 0.7rem;
+}
+
+/* ========================================
+   MOBILE OVERLAY
+   ======================================== */
+
+.mobile-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    display: none;
+    opacity: 0;
+    transition: opacity var(--transition-normal);
+}
+
+.mobile-overlay.show {
+    opacity: 1;
+}
+
+/* ========================================
+   TOOLTIPS
+   ======================================== */
+
+.tooltip {
+    position: absolute;
+    background: var(--text-dark);
+    color: var(--text-white);
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--border-radius-sm);
+    font-size: 0.8rem;
+    font-weight: 500;
+    z-index: 10000;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(5px);
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+}
+
+.tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: var(--text-dark);
+}
+
+.tooltip.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* ========================================
+   MODALES
+   ======================================== */
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    padding: 2rem;
+}
+
+.modal-content {
+    background: var(--bg-card);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-lg);
+    width: 100%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+}
+
+.modal-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border-light);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0.25rem;
+    transition: color var(--transition-fast);
+}
+
+.modal-close:hover {
+    color: var(--text-primary);
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border-light);
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+}
+
+/* ========================================
+   VALIDATION DE FORMULAIRES
+   ======================================== */
+
+.form-control.error {
+    border-color: var(--error-color);
+    box-shadow: 0 0 0 3px rgba(244, 67, 54, 0.1);
+}
+
+.field-error {
+    color: var(--error-color);
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.field-error::before {
+    content: '\f071';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+}
+
+/* ========================================
+   ÉTATS DE CHARGEMENT
+   ======================================== */
+
+.loading {
+    position: relative;
+    pointer-events: none;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+.loading::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--border-light);
+    border-top-color: var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    z-index: 11;
+}
+
+@keyframes spin {
+    to {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
+
+/* ========================================
+   SKELETON LOADING
+   ======================================== */
+
+.skeleton {
+    background: linear-gradient(90deg, var(--border-light) 25%, var(--bg-tertiary) 50%, var(--border-light) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+}
+
+.skeleton-text {
+    height: 1rem;
+    border-radius: 0.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.skeleton-text.short {
+    width: 60%;
+}
+
+.skeleton-text.medium {
+    width: 80%;
+}
+
+.skeleton-text.long {
+    width: 100%;
+}
+
+.skeleton-card {
+    height: 200px;
+    border-radius: var(--border-radius);
+}
+
+@keyframes skeleton-loading {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+/* ========================================
+   DRAG & DROP
+   ======================================== */
+
+.drop-zone {
+    border: 2px dashed var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    text-align: center;
+    color: var(--text-muted);
+    transition: all var(--transition-fast);
+    cursor: pointer;
+}
+
+.drop-zone:hover,
+.drop-zone.drag-over {
+    border-color: var(--primary-color);
+    background: rgba(30, 136, 229, 0.05);
+    color: var(--primary-color);
+}
+
+.drop-zone i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.drop-zone p {
+    margin: 0;
+    font-weight: 500;
+}
+
+.drop-zone small {
+    display: block;
+    margin-top: 0.5rem;
+    opacity: 0.7;
+}
+
+/* ========================================
+   ACCORDÉON
+   ======================================== */
+
+.accordion {
+    border: 1px solid var(--border-light);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+}
+
+.accordion-item {
+    border-bottom: 1px solid var(--border-light);
+}
+
+.accordion-item:last-child {
+    border-bottom: none;
+}
+
+.accordion-header {
+    padding: 1rem 1.5rem;
+    background: var(--bg-secondary);
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background-color var(--transition-fast);
+}
+
+.accordion-header:hover {
+    background: var(--bg-tertiary);
+}
+
+.accordion-title {
+    font-weight: 600;
+    margin: 0;
+}
+
+.accordion-icon {
+    transition: transform var(--transition-fast);
+}
+
+.accordion-item.active .accordion-icon {
+    transform: rotate(180deg);
+}
+
+.accordion-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height var(--transition-normal);
+}
+
+.accordion-item.active .accordion-content {
+    max-height: 500px;
+}
+
+.accordion-body {
+    padding: 1.5rem;
+}
+
+/* ========================================
+   ONGLETS (TABS)
+   ======================================== */
+
+.tabs {
+    border-bottom: 1px solid var(--border-light);
+}
+
+.tabs-nav {
+    display: flex;
+    gap: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.tabs-nav li {
+    margin-bottom: -1px;
+}
+
+.tabs-nav a {
+    display: block;
+    padding: 1rem 1.5rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    border-bottom: 2px solid transparent;
+    transition: all var(--transition-fast);
+    font-weight: 500;
+}
+
+.tabs-nav a:hover {
+    color: var(--text-primary);
+    background: var(--bg-tertiary);
+}
+
+.tabs-nav a.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+    background: var(--bg-secondary);
+}
+
+.tab-content {
+    padding: 1.5rem 0;
+}
+
+.tab-pane {
+    display: none;
+}
+
+.tab-pane.active {
+    display: block;
+}
+
+/* ========================================
+   RESPONSIVE OPTIMISATIONS
+   ======================================== */
+
+@media (max-width: 768px) {
+    .notification-toast {
+        right: 10px;
+        left: 10px;
+        min-width: auto;
+        max-width: none;
+    }
+    
+    .user-dropdown,
+    .notifications-dropdown {
+        position: fixed;
+        top: var(--header-height);
+        right: 0;
+        left: 0;
+        border-radius: 0;
+        max-height: calc(100vh - var(--header-height));
+    }
+    
+    .notifications-dropdown {
+        width: 100%;
+    }
+    
+    .modal {
+        padding: 1rem;
+    }
+    
+    .modal-content {
+        max-height: 95vh;
+    }
+    
+    .tabs-nav {
+        flex-wrap: wrap;
+    }
+    
+    .tabs-nav a {
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+    }
+    
+    .quick-actions {
+        grid-template-columns: 1fr;
+    }
+    
+    .quick-action {
+        padding: 1rem;
+    }
+    
+    .quick-action-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 1.25rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .breadcrumb {
+        font-size: 0.8rem;
+        flex-wrap: wrap;
+    }
+    
+    .modal-header,
+    .modal-body,
+    .modal-footer {
+        padding: 1rem;
+    }
+    
+    .accordion-header {
+        padding: 0.75rem 1rem;
+    }
+    
+    .accordion-body {
+        padding: 1rem;
+    }
+    
+    .notification-item {
+        padding: 0.75rem;
+    }
+    
+    .dropdown-item {
+        padding: 0.75rem;
+    }
+}
