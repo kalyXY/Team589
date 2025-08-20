@@ -125,6 +125,7 @@ try {
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkfKcSILhK+Gm2B9Bw5cJ0Z4wNG0Ax7Anxr1j7rwhhtjfiV2KxA9i6VwQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 	<link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/css/dashboard.css">
 	<link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/css/style.css">
+	<link rel="stylesheet" href="<?php echo BASE_URL; ?>stocks.css">
 </head>
 <body>
 	<nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom sticky-top">
