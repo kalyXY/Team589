@@ -6,13 +6,6 @@
 
 session_start();
 
-// Simulation de session utilisateur si nécessaire
-if (!isset($_SESSION['username'])) {
-    $_SESSION['username'] = 'Admin';
-    $_SESSION['role'] = 'admin';
-    $_SESSION['user_id'] = 1;
-}
-
 require_once __DIR__ . '/config/config.php';
 require_once __DIR__ . '/config/db.php';
 require_once __DIR__ . '/components/stats-card.php';
@@ -40,27 +33,28 @@ class AlertsManager {
         try {
             $sql = "SELECT 
                         s.id,
-                        s.nom,
+                        s.nom_article,
                         s.quantite,
-                        s.seuil_alerte,
+                        COALESCE(s.seuil, s.seuil_alerte) AS seuil,
                         s.categorie,
-                        s.prix_unitaire,
+                        COALESCE(s.prix_achat, 0) AS prix_achat,
+                        COALESCE(s.prix_vente, 0) AS prix_vente,
                         CASE 
                             WHEN s.quantite = 0 THEN 'rupture'
-                            WHEN s.quantite <= s.seuil_alerte THEN 'faible'
+                            WHEN s.quantite <= COALESCE(s.seuil, s.seuil_alerte) THEN 'faible'
                             ELSE 'normal'
-                        END as niveau_alerte,
+                        END AS niveau_alerte,
                         CASE 
                             WHEN s.quantite = 0 THEN 'Rupture de stock'
-                            WHEN s.quantite <= s.seuil_alerte THEN 'Stock faible'
+                            WHEN s.quantite <= COALESCE(s.seuil, s.seuil_alerte) THEN 'Stock faible'
                             ELSE 'Stock normal'
-                        END as message_alerte
+                        END AS message_alerte
                     FROM stocks s
-                    WHERE s.quantite <= s.seuil_alerte
+                    WHERE s.quantite <= COALESCE(s.seuil, s.seuil_alerte)
                     ORDER BY 
                         CASE 
                             WHEN s.quantite = 0 THEN 1
-                            WHEN s.quantite <= s.seuil_alerte THEN 2
+                            WHEN s.quantite <= COALESCE(s.seuil, s.seuil_alerte) THEN 2
                             ELSE 3
                         END,
                         s.quantite ASC";
@@ -93,10 +87,17 @@ class AlertsManager {
      */
     public function createOrder($articleId, $fournisseurId, $quantite, $prixUnitaire = 0, $notes = '') {
         try {
+            // Si prix non fourni, utiliser le prix_achat du stock
+            if ($prixUnitaire <= 0) {
+                $stmt = $this->pdo->prepare('SELECT COALESCE(prix_achat,0) FROM stocks WHERE id = ?');
+                $stmt->execute([$articleId]);
+                $prixUnitaire = (float) ($stmt->fetchColumn() ?: 0);
+            }
             $sql = "INSERT INTO commandes (article_id, fournisseur_id, quantite, prix_unitaire, notes, created_by) 
                     VALUES (?, ?, ?, ?, ?, ?)";
             $stmt = $this->pdo->prepare($sql);
-            return $stmt->execute([$articleId, $fournisseurId, $quantite, $prixUnitaire, $notes, 'admin']);
+            $createdBy = $_SESSION['username'] ?? 'system';
+            return $stmt->execute([$articleId, $fournisseurId, $quantite, $prixUnitaire, $notes, $createdBy]);
         } catch (PDOException $e) {
             error_log("Erreur createOrder: " . $e->getMessage());
             return false;
@@ -116,13 +117,13 @@ class AlertsManager {
                         c.date_commande,
                         c.date_livraison_prevue,
                         c.notes,
-                        s.nom as article_nom,
+                        s.nom_article as article_nom,
                         s.categorie as article_categorie,
                         f.nom as fournisseur_nom,
                         f.contact as fournisseur_contact,
                         f.email as fournisseur_email,
                         f.telephone as fournisseur_telephone,
-                        (c.quantite * c.prix_unitaire) as montant_total
+                        (c.quantite * COALESCE(NULLIF(c.prix_unitaire,0), s.prix_achat)) as montant_total
                     FROM commandes c
                     JOIN stocks s ON c.article_id = s.id
                     JOIN fournisseurs f ON c.fournisseur_id = f.id
@@ -143,10 +144,40 @@ class AlertsManager {
      */
     public function updateOrderStatus($orderId, $newStatus) {
         try {
-            $sql = "UPDATE commandes SET statut = ? WHERE id = ?";
-            $stmt = $this->pdo->prepare($sql);
-            return $stmt->execute([$newStatus, $orderId]);
+            $this->pdo->beginTransaction();
+
+            // Récupérer ancien statut et infos commande
+            $stmt = $this->pdo->prepare('SELECT statut, article_id, quantite FROM commandes WHERE id = ? FOR UPDATE');
+            $stmt->execute([$orderId]);
+            $order = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$order) {
+                $this->pdo->rollBack();
+                return false;
+            }
+
+            // Mettre à jour le statut
+            $stmt = $this->pdo->prepare('UPDATE commandes SET statut = ? WHERE id = ?');
+            $stmt->execute([$newStatus, $orderId]);
+
+            // Si livraison et ancien statut différent, incrémenter le stock
+            if ($newStatus === 'livrée' && $order['statut'] !== 'livrée') {
+                $stmt = $this->pdo->prepare('UPDATE stocks SET quantite = quantite + :qte WHERE id = :article_id');
+                $stmt->execute([
+                    ':qte' => (int)$order['quantite'],
+                    ':article_id' => (int)$order['article_id']
+                ]);
+
+                // Log mouvement
+                $stmt = $this->pdo->prepare('INSERT INTO mouvements (article_id, action, details, utilisateur) VALUES (?, ?, ?, ?)');
+                $stmt->execute([(int)$order['article_id'], 'ajout', 'Réception commande fournisseur (+'.$order['quantite'].')', $_SESSION['username'] ?? 'system']);
+            }
+
+            $this->pdo->commit();
+            return true;
         } catch (PDOException $e) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
             error_log("Erreur updateOrderStatus: " . $e->getMessage());
             return false;
         }
@@ -223,7 +254,7 @@ class AlertsManager {
      */
     public function getAllArticles() {
         try {
-            $sql = "SELECT id, nom, quantite, seuil_alerte, categorie FROM stocks ORDER BY nom ASC";
+            $sql = "SELECT id, nom_article, quantite, COALESCE(seuil, seuil_alerte) AS seuil, categorie FROM stocks ORDER BY nom_article ASC";
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute();
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -434,7 +465,7 @@ renderStatsGrid($alertStats);
                 <?php foreach ($lowStockItems as $item): ?>
                     <div class="alert-card <?php echo $item['niveau_alerte'] === 'rupture' ? 'danger' : 'warning'; ?>">
                         <div class="alert-card-header">
-                            <h4 class="alert-card-title"><?php echo htmlspecialchars($item['nom']); ?></h4>
+                            <h4 class="alert-card-title"><?php echo htmlspecialchars($item['nom_article']); ?></h4>
                             <span class="alert-badge <?php echo $item['niveau_alerte'] === 'rupture' ? 'danger' : 'warning'; ?>">
                                 <?php echo $item['niveau_alerte'] === 'rupture' ? 'RUPTURE' : 'FAIBLE'; ?>
                             </span>
@@ -445,20 +476,23 @@ renderStatsGrid($alertStats);
                                     <?php echo $item['quantite']; ?>
                                 </div>
                                 <div class="alert-threshold">
-                                    Seuil: <?php echo $item['seuil_alerte']; ?>
+                                    Seuil: <?php echo (int)$item['seuil']; ?>
                                 </div>
                             </div>
                             <div class="alert-details">
                                 <div><strong>Catégorie:</strong> <?php echo htmlspecialchars($item['categorie']); ?></div>
-                                <div><strong>Prix:</strong> <?php echo number_format($item['prix_unitaire'], 2); ?>€</div>
+                                <div><strong>Prix achat:</strong> <?php echo number_format((float)$item['prix_achat'], 2, ',', ' '); ?>€</div>
+                                <div><strong>Prix vente:</strong> <?php echo number_format((float)$item['prix_vente'], 2, ',', ' '); ?>€</div>
+                                <?php $perte = max(0, (float)$item['prix_vente'] - (float)$item['prix_achat']) * (int)$item['seuil']; ?>
+                                <div><strong>Perte potentielle:</strong> <?php echo number_format($perte, 2, ',', ' '); ?>€</div>
                             </div>
                         </div>
                         
                         <div class="alert-actions">
-                            <button class="btn btn-primary btn-sm" onclick="openOrderModal(<?php echo $item['id']; ?>, '<?php echo htmlspecialchars($item['nom']); ?>')">
+                            <button class="btn btn-primary btn-sm" onclick="openOrderModal(<?php echo $item['id']; ?>, '<?php echo htmlspecialchars($item['nom_article']); ?>')">
                                 <i class="fas fa-plus"></i> Commander
                             </button>
-                            <button class="btn btn-outline btn-sm" onclick="openThresholdModal(<?php echo $item['id']; ?>, <?php echo $item['seuil_alerte']; ?>, '<?php echo htmlspecialchars($item['nom']); ?>')">
+                            <button class="btn btn-outline btn-sm" onclick="openThresholdModal(<?php echo $item['id']; ?>, <?php echo (int)$item['seuil']; ?>, '<?php echo htmlspecialchars($item['nom_article']); ?>')">
                                 <i class="fas fa-cog"></i> Modifier Seuil
                             </button>
                         </div>

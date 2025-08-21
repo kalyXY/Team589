@@ -226,6 +226,8 @@ CREATE TABLE `stocks` (
   `categorie` varchar(100) DEFAULT NULL,
   `quantite` int(11) NOT NULL,
   `seuil` int(11) NOT NULL,
+  `prix_achat` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `prix_vente` decimal(10,2) NOT NULL DEFAULT 0.00,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `seuil_alerte` int(11) DEFAULT 10
@@ -259,17 +261,21 @@ INSERT INTO `stocks` (`id`, `nom_article`, `categorie`, `quantite`, `seuil`, `cr
 CREATE TABLE `users` (
   `id` int(11) NOT NULL,
   `username` varchar(100) NOT NULL,
+  `email` varchar(150) NOT NULL,
   `password` varchar(255) NOT NULL,
-  `role` enum('admin','gestionnaire','enseignant') NOT NULL
+  `role` enum('admin','gestionnaire','caissier','utilisateur') NOT NULL DEFAULT 'utilisateur',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Déchargement des données de la table `users`
 --
 
-INSERT INTO `users` (`id`, `username`, `password`, `role`) VALUES
-(1, 'admin', '$2y$10$4IWV/38Ka0c/FgDNnoCYSu25WxwaDycCMdr1J8PVc8Gf/xsahvmRu', 'admin'),
-(2, 'gestionnaire', '$2y$10$cMNWtGk4gDqCjt6Buodrf.kqHFi3bfNupK6Fx3VHfDS3mC6GtUDuO', 'gestionnaire');
+INSERT INTO `users` (`id`, `username`, `email`, `password`, `role`, `created_at`) VALUES
+(1, 'admin', 'admin@scolaria.local', '$2y$10$4IWV/38Ka0c/FgDNnoCYSu25WxwaDycCMdr1J8PVc8Gf/xsahvmRu', 'admin', CURRENT_TIMESTAMP()),
+(2, 'gestionnaire', 'gestionnaire@scolaria.local', '$2y$10$cMNWtGk4gDqCjt6Buodrf.kqHFi3bfNupK6Fx3VHfDS3mC6GtUDuO', 'gestionnaire', CURRENT_TIMESTAMP()),
+(3, 'caissier', 'caissier@scolaria.local', '$2y$10$hZqjKqZIfwWf9DqvFq4HPeE1iY2Gx1rK9rPVp3oXf7wq0sE4H3PlS', 'caissier', CURRENT_TIMESTAMP()),
+(4, 'user', 'user@scolaria.local', '$2y$10$4Av1WeP5w8B0QmXrY3zqXuqpG2o3KqZ4m8n4Oe3gXxEJwGf8QWJpe', 'utilisateur', CURRENT_TIMESTAMP());
 
 --
 -- Index pour les tables déchargées
@@ -337,7 +343,8 @@ ALTER TABLE `stocks`
 --
 ALTER TABLE `users`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `username` (`username`);
+  ADD UNIQUE KEY `username` (`username`),
+  ADD UNIQUE KEY `email` (`email`);
 
 --
 -- AUTO_INCREMENT pour les tables déchargées
@@ -389,7 +396,7 @@ ALTER TABLE `stocks`
 -- AUTO_INCREMENT pour la table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- Contraintes pour les tables déchargées

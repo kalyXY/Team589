@@ -69,6 +69,40 @@ if (isset($_GET['action']) && $_GET['action'] === 'expenses_json') {
     }
 }
 
+// Endpoint JSON: ventes mensuelles
+if (isset($_GET['action']) && $_GET['action'] === 'sales_monthly_json') {
+    try {
+        $pdo = Database::getConnection();
+        $sql = 'SELECT MONTH(date_vente) AS mois, SUM(total) AS montant
+                FROM ventes
+                WHERE YEAR(date_vente) = YEAR(CURDATE())
+                GROUP BY mois
+                ORDER BY mois';
+        $stmt = $pdo->query($sql);
+        $rows = $stmt->fetchAll() ?: [];
+
+        $labels = [];
+        $data = [];
+        $moisNoms = [1=>'Jan',2=>'Fév',3=>'Mar',4=>'Avr',5=>'Mai',6=>'Juin',7=>'Juil',8=>'Août',9=>'Sep',10=>'Oct',11=>'Nov',12=>'Déc'];
+        foreach ($rows as $r) {
+            $m = (int) ($r['mois'] ?? 0);
+            $labels[] = $moisNoms[$m] ?? (string) $m;
+            $data[] = (float) ($r['montant'] ?? 0);
+        }
+
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode([
+            'labels' => $labels,
+            'data' => $data,
+        ]);
+        exit;
+    } catch (Throwable $e) {
+        header('Content-Type: application/json; charset=utf-8', true, 500);
+        echo json_encode(['error' => 'server_error']);
+        exit;
+    }
+}
+
 // Configuration de la page
 $currentPage = 'dashboard';
 $pageTitle = 'Tableau de bord';
@@ -84,7 +118,7 @@ $canViewCosts = in_array($role, ['admin'], true);
 $dashboardStats = [
     [
         'title' => 'Articles en stock',
-        'value' => 1247,
+        'value' => 0,
         'icon' => 'fas fa-boxes',
         'type' => 'primary',
         'change' => '+12.5%',
@@ -94,7 +128,7 @@ $dashboardStats = [
     ],
     [
         'title' => 'Alertes actives',
-        'value' => 8,
+        'value' => 0,
         'icon' => 'fas fa-exclamation-triangle',
         'type' => 'warning',
         'change' => '-25%',
@@ -104,7 +138,7 @@ $dashboardStats = [
     ],
     [
         'title' => 'Budget mensuel',
-        'value' => '€24,580',
+        'value' => '€0',
         'icon' => 'fas fa-euro-sign',
         'type' => 'success',
         'change' => '+8.2%',
@@ -113,56 +147,19 @@ $dashboardStats = [
         'link' => '/finances.php'
     ],
     [
-        'title' => 'Utilisateurs actifs',
-        'value' => 156,
+        'title' => 'Utilisateurs',
+        'value' => 0,
         'icon' => 'fas fa-users',
         'type' => 'primary',
         'change' => '+5.1%',
         'changeType' => 'positive',
-        'subtitle' => 'Connectés cette semaine',
+        'subtitle' => 'Utilisateurs enregistrés',
         'link' => '/users.php'
     ]
 ];
 
-// Données pour le tableau des dernières activités (exemple)
-$recentActivities = [
-    [
-        'id' => 1,
-        'user' => 'Marie Dubois',
-        'action' => 'Ajout de stock',
-        'item' => 'Cahiers A4',
-        'quantity' => 50,
-        'date' => '2024-01-15 14:30:00',
-        'status' => 'Terminé'
-    ],
-    [
-        'id' => 2,
-        'user' => 'Jean Martin',
-        'action' => 'Commande',
-        'item' => 'Stylos bleus',
-        'quantity' => 100,
-        'date' => '2024-01-15 11:15:00',
-        'status' => 'En cours'
-    ],
-    [
-        'id' => 3,
-        'user' => 'Sophie Laurent',
-        'action' => 'Sortie de stock',
-        'item' => 'Papier A3',
-        'quantity' => 25,
-        'date' => '2024-01-15 09:45:00',
-        'status' => 'Terminé'
-    ],
-    [
-        'id' => 4,
-        'user' => 'Pierre Durand',
-        'action' => 'Inventaire',
-        'item' => 'Classeurs',
-        'quantity' => 200,
-        'date' => '2024-01-14 16:20:00',
-        'status' => 'Terminé'
-    ]
-];
+// Données pour le tableau des dernières activités (DB)
+$recentActivities = [];
 
 // Configuration du tableau
 $tableConfig = [
@@ -209,9 +206,9 @@ $tableConfig = [
             'label' => 'Statut',
             'type' => 'badge',
             'badgeClass' => [
-                'Terminé' => 'success',
-                'En cours' => 'warning',
-                'Annulé' => 'error'
+                'ajout' => 'success',
+                'modification' => 'warning',
+                'suppression' => 'error'
             ]
         ]
     ],
@@ -232,21 +229,20 @@ $tableConfig = [
     'data' => $recentActivities
 ];
 
-// Données pour les graphiques (fallback si endpoint indisponible)
-$monthlyExpenses = [
-    ['month' => 'Jan', 'amount' => 15420],
-    ['month' => 'Fév', 'amount' => 18350],
-    ['month' => 'Mar', 'amount' => 22100],
-    ['month' => 'Avr', 'amount' => 19800],
-    ['month' => 'Mai', 'amount' => 24580]
-];
+// Données pour les graphiques (alimentées par la DB)
+$monthlyExpenses = [];
 
-$stockCategories = [
-    ['category' => 'Papeterie', 'count' => 450, 'color' => '#1E88E5'],
-    ['category' => 'Informatique', 'count' => 120, 'color' => '#43A047'],
-    ['category' => 'Mobilier', 'count' => 85, 'color' => '#FF6B35'],
-    ['category' => 'Nettoyage', 'count' => 200, 'color' => '#FFA726']
-];
+$stockCategories = [];
+
+// Ventes par mois (rempli via DB ci-dessous)
+$salesByMonth = [];
+
+// Top articles vendus
+$topSellingProducts = [];
+
+// Ventes du jour (fallback)
+$todaySalesCount = 0;
+$todaySalesAmount = 0.0;
 
 // Charger données DB réelles pour tuiles si disponible
 try {
@@ -264,9 +260,119 @@ try {
     $row = $pdo->query('SELECT SUM(montant) AS t FROM depenses')->fetch();
     $totalExpenses = (float) ($row['t'] ?? 0);
     $dashboardStats[2]['value'] = '€' . number_format($totalExpenses, 0, ',', ' ');
+    // Activités récentes depuis mouvements
+    try {
+        $sqlMov = 'SELECT m.id, m.utilisateur AS user, m.action, m.date_mouvement AS date, s.nom_article AS item
+                   FROM mouvements m LEFT JOIN stocks s ON m.article_id = s.id
+                   ORDER BY m.date_mouvement DESC, m.id DESC
+                   LIMIT 10';
+        $rows = $pdo->query($sqlMov)->fetchAll() ?: [];
+        $recentActivities = array_map(function($r){
+            return [
+                'id' => (int)($r['id'] ?? 0),
+                'user' => (string)($r['user'] ?? ''),
+                'action' => (string)($r['action'] ?? ''),
+                'item' => (string)($r['item'] ?? ''),
+                'quantity' => '',
+                'date' => (string)($r['date'] ?? ''),
+                'status' => (string)($r['action'] ?? '')
+            ];
+        }, $rows);
+        $tableConfig['data'] = $recentActivities;
+    } catch (Throwable $ignore) {}
+
+    // Utilisateurs (total)
+    try {
+        $row = $pdo->query('SELECT COUNT(*) AS c FROM users')->fetch();
+        $dashboardStats[3]['value'] = (int) ($row['c'] ?? 0);
+        $dashboardStats[3]['subtitle'] = 'Utilisateurs enregistrés';
+    } catch (Throwable $ignore) {}
+
+    // Ventes du jour: nombre + montant
+    try {
+        $stmt = $pdo->query("SELECT COUNT(*) AS n, COALESCE(SUM(total),0) AS t FROM ventes WHERE DATE(date_vente) = CURDATE()");
+        $r = $stmt->fetch() ?: [];
+        $todaySalesCount = (int) ($r['n'] ?? 0);
+        $todaySalesAmount = (float) ($r['t'] ?? 0);
+    } catch (Throwable $ignore) {
+        // table ventes peut ne pas exister
+    }
+
+    // Ventes par mois (année courante)
+    try {
+        $sqlSales = 'SELECT MONTH(date_vente) AS m, SUM(total) AS montant
+                     FROM ventes
+                     WHERE YEAR(date_vente) = YEAR(CURDATE())
+                     GROUP BY m ORDER BY m';
+        $rows = $pdo->query($sqlSales)->fetchAll() ?: [];
+        $map = [];
+        foreach ($rows as $r) {
+            $map[(int)$r['m']] = (float) ($r['montant'] ?? 0);
+        }
+        $moisNoms = [1=>'Jan',2=>'Fév',3=>'Mar',4=>'Avr',5=>'Mai',6=>'Juin',7=>'Juil',8=>'Août',9=>'Sep',10=>'Oct',11=>'Nov',12=>'Déc'];
+        $salesByMonth = [];
+        for ($i = 1; $i <= 12; $i++) {
+            $salesByMonth[] = ['month' => $moisNoms[$i], 'amount' => (float) ($map[$i] ?? 0)];
+        }
+    } catch (Throwable $ignore) {
+        // fallback déjà défini
+    }
+
+    // Articles les plus vendus
+    try {
+        $sqlTop = 'SELECT s.nom_article, SUM(v.quantite) AS total_vendu
+                   FROM ventes v
+                   JOIN stocks s ON v.article_id = s.id
+                   GROUP BY v.article_id, s.nom_article
+                   ORDER BY total_vendu DESC
+                   LIMIT 5';
+        $topSellingProducts = $pdo->query($sqlTop)->fetchAll() ?: $topSellingProducts;
+    } catch (Throwable $ignore) {
+        // fallback déjà défini
+    }
 } catch (Throwable $e) {
     // Silent fallback to demo data
 }
+
+// Dépenses mensuelles (année courante) pour le graphique
+try {
+    $pdo = Database::getConnection();
+    $rows = $pdo->query("SELECT MONTH(`date`) AS m, SUM(montant) AS total FROM depenses GROUP BY m ORDER BY m")->fetchAll() ?: [];
+    $moisNoms = [1=>'Jan',2=>'Fév',3=>'Mar',4=>'Avr',5=>'Mai',6=>'Juin',7=>'Juil',8=>'Août',9=>'Sep',10=>'Oct',11=>'Nov',12=>'Déc'];
+    $map = [];
+    foreach ($rows as $r) { $map[(int)$r['m']] = (float) ($r['total'] ?? 0); }
+    $monthlyExpenses = [];
+    for ($i=1;$i<=12;$i++) { $monthlyExpenses[] = ['month'=>$moisNoms[$i], 'amount'=>(float)($map[$i] ?? 0)]; }
+} catch (Throwable $ignore) { $monthlyExpenses = []; }
+
+// Répartition des stocks par catégorie
+try {
+    $pdo = Database::getConnection();
+    $rows = $pdo->query("SELECT COALESCE(categorie,'Autre') AS category, COUNT(*) AS cnt FROM stocks GROUP BY category ORDER BY cnt DESC")->fetchAll() ?: [];
+    $palette = ['#1E88E5','#43A047','#FF6B35','#FFA726','#8E44AD','#00ACC1','#D81B60','#7CB342'];
+    $stockCategories = [];
+    $idx = 0;
+    foreach ($rows as $r) {
+        $stockCategories[] = [
+            'category' => (string)$r['category'],
+            'count' => (int)$r['cnt'],
+            'color' => $palette[$idx % count($palette)]
+        ];
+        $idx++;
+    }
+} catch (Throwable $ignore) { $stockCategories = []; }
+
+// Ajouter la tuile "Ventes du jour"
+$dashboardStats[] = [
+    'title' => 'Ventes du jour',
+    'value' => number_format($todaySalesCount, 0, ',', ' '),
+    'icon' => 'fas fa-cash-register',
+    'type' => 'success',
+    'change' => '',
+    'changeType' => 'positive',
+    'subtitle' => 'Montant: €' . number_format($todaySalesAmount, 0, ',', ' '),
+    'link' => '/pos.php'
+];
 
 // Début du contenu HTML
 ob_start();
@@ -296,6 +402,42 @@ ob_start();
         </div>
         <div class="card-body">
             <canvas id="stockChart" height="300"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Graphique des ventes mensuelles -->
+<div class="card" style="margin-bottom: var(--spacing-xl);">
+    <div class="card-header">
+        <h3 class="card-title">Ventes par mois</h3>
+        <p class="card-subtitle">Année en cours</p>
+    </div>
+    <div class="card-body">
+        <canvas id="salesChart" height="320"></canvas>
+    </div>
+</div>
+
+<!-- Articles les plus vendus -->
+<div class="card" style="margin-bottom: var(--spacing-xl);">
+    <div class="card-header">
+        <h3 class="card-title">Articles les plus vendus</h3>
+        <p class="card-subtitle">Top 5 par quantité vendue</p>
+    </div>
+    <div class="card-body">
+        <div style="display: grid; grid-template-columns: 1fr; gap: var(--spacing-sm);">
+            <?php if (!empty($topSellingProducts)): ?>
+                <?php foreach ($topSellingProducts as $p): ?>
+                    <div class="list-item" style="display:flex; align-items:center; justify-content:space-between; padding: var(--spacing-sm) var(--spacing-md); border:1px solid var(--border-color); border-radius: var(--radius-md);">
+                        <div style="display:flex; align-items:center; gap: var(--spacing-sm);">
+                            <i class="fas fa-box"></i>
+                            <span><?= htmlspecialchars((string)($p['nom_article'] ?? '')) ?></span>
+                        </div>
+                        <span class="badge badge-primary">x<?= (int)($p['total_vendu'] ?? 0) ?></span>
+                    </div>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <div class="text-muted">Aucune vente enregistrée.</div>
+            <?php endif; ?>
         </div>
     </div>
 </div>
@@ -384,6 +526,16 @@ ob_start();
                 <div>
                     <h4 style="margin: 0 0 var(--spacing-xs) 0; font-size: var(--font-size-lg);">Générer un rapport</h4>
                     <p style="margin: 0; color: var(--text-muted); font-size: var(--font-size-sm);">Créer un rapport personnalisé</p>
+                </div>
+            </a>
+
+            <a href="pos.php" class="card" style="text-decoration: none; color: inherit; padding: var(--spacing-lg); display: flex; align-items: center; gap: var(--spacing-md);">
+                <div style="width: 50px; height: 50px; background: var(--success-color); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; color: white; font-size: var(--font-size-lg);">
+                    <i class="fas fa-cash-register"></i>
+                </div>
+                <div>
+                    <h4 style="margin: 0 0 var(--spacing-xs) 0; font-size: var(--font-size-lg);">Ouvrir POS</h4>
+                    <p style="margin: 0; color: var(--text-muted); font-size: var(--font-size-sm);">Accéder au point de vente</p>
                 </div>
             </a>
         </div>
@@ -482,6 +634,42 @@ function pageInit() {
                             usePointStyle: true
                         }
                     }
+                }
+            }
+        });
+    }
+
+    // Graphique des ventes par mois
+    const salesCtx = document.getElementById('salesChart');
+    if (salesCtx) {
+        new Chart(salesCtx, {
+            type: 'bar',
+            data: {
+                labels: <?= json_encode(array_column($salesByMonth, 'month')) ?>,
+                datasets: [{
+                    label: 'Ventes (€)',
+                    data: <?= json_encode(array_map(fn($r) => (float)$r['amount'], $salesByMonth)) ?>,
+                    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                    borderColor: '#10B981',
+                    borderWidth: 2,
+                    borderRadius: 6,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(0, 0, 0, 0.05)' },
+                        ticks: {
+                            callback: function(value) { return '€' + value.toLocaleString(); }
+                        }
+                    },
+                    x: { grid: { display: false } }
                 }
             }
         });

@@ -32,9 +32,16 @@ session_set_cookie_params([
 ]);
 session_start();
 
-// Redirection si déjà connecté
-if (!empty($_SESSION['user_id'])) {
-    header('Location: dashboard.php');
+// Redirection si déjà connecté (selon rôle)
+if (!empty($_SESSION['user_id']) && !empty($_SESSION['role'])) {
+    $existingRole = (string) $_SESSION['role'];
+    if (in_array($existingRole, ['admin', 'gestionnaire'], true)) {
+        header('Location: ' . BASE_URL . 'dashboard.php');
+    } elseif ($existingRole === 'caissier') {
+        header('Location: ' . BASE_URL . 'pos.php');
+    } else {
+        header('Location: ' . BASE_URL . 'stocks.php?view=readonly');
+    }
     exit;
 }
 
@@ -64,7 +71,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     setcookie(session_name(), session_id(), time() + (30 * 24 * 60 * 60), '/', '', isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on', true);
                 }
 
-                header('Location: ' . BASE_URL . 'dashboard.php');
+                // Redirection selon rôle
+                $target = 'dashboard.php';
+                if (in_array($_SESSION['role'], ['admin', 'gestionnaire'], true)) {
+                    $target = 'dashboard.php';
+                } elseif ($_SESSION['role'] === 'caissier') {
+                    $target = 'pos.php';
+                } else {
+                    $target = 'stocks.php?view=readonly';
+                }
+                header('Location: ' . BASE_URL . $target);
                 exit;
             }
 
@@ -173,16 +189,7 @@ ob_start();
                 </a>
             </div>
             
-            <!-- Informations de démonstration -->
-            <div class="demo-credentials">
-                <h4>
-                    <i class="fas fa-info-circle"></i>
-                    Comptes de démonstration
-                </h4>
-                <p><strong>Administrateur :</strong> <code>admin</code> / <code>admin123</code></p>
-                <p><strong>Gestionnaire :</strong> <code>manager</code> / <code>manager123</code></p>
-                <p><strong>Utilisateur :</strong> <code>user</code> / <code>user123</code></p>
-            </div>
+            
                                   
             <!-- Fonctionnalités -->
             <div class="auth-features">

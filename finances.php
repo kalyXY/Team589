@@ -229,6 +229,32 @@ class FinancesManager {
             $stmt->execute([$annee]);
             $depensesParMois = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
+            // Recettes (ventes) par mois
+            try {
+                $sql = "SELECT MONTH(date_vente) AS mois, SUM(COALESCE(v.total, v.quantite * v.prix_unitaire, 0)) AS total
+                        FROM ventes v
+                        WHERE YEAR(date_vente) = ?
+                        GROUP BY MONTH(date_vente)
+                        ORDER BY mois";
+                $stmt = $this->pdo->prepare($sql);
+                $stmt->execute([$annee]);
+                $recettesParMois = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            } catch (Throwable $e) {
+                $recettesParMois = [];
+            }
+
+            // Bénéfice net par mois
+            $mapDep = [];
+            foreach ($depensesParMois as $d) { $mapDep[(int)$d['mois']] = (float)$d['total']; }
+            $mapRec = [];
+            foreach ($recettesParMois as $r) { $mapRec[(int)$r['mois']] = (float)$r['total']; }
+            $netParMois = [];
+            for ($m = 1; $m <= 12; $m++) {
+                $dep = $mapDep[$m] ?? 0.0;
+                $rec = $mapRec[$m] ?? 0.0;
+                $netParMois[] = ['mois' => $m, 'total' => $rec - $dep];
+            }
+
             // Dépenses par catégorie
             $sql = "SELECT c.nom, c.couleur, SUM(d.montant) as total 
                     FROM depenses d 
@@ -239,14 +265,28 @@ class FinancesManager {
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute([$annee]);
             $depensesParCategorie = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Top 5 articles les plus rentables
+            try {
+                $sqlTop = "SELECT s.nom_article, SUM(v.quantite*(v.prix_unitaire - s.prix_achat)) as benefice
+                           FROM ventes v JOIN stocks s ON v.article_id = s.id 
+                           GROUP BY v.article_id, s.nom_article 
+                           ORDER BY benefice DESC LIMIT 5";
+                $topProfitable = $this->pdo->query($sqlTop)->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            } catch (Throwable $e) {
+                $topProfitable = [];
+            }
             
             return [
                 'depenses_par_mois' => $depensesParMois,
-                'depenses_par_categorie' => $depensesParCategorie
+                'recettes_par_mois' => $recettesParMois ?? [],
+                'net_par_mois' => $netParMois,
+                'depenses_par_categorie' => $depensesParCategorie,
+                'top_profitable' => $topProfitable
             ];
         } catch (PDOException $e) {
             error_log("Erreur generateReports: " . $e->getMessage());
-            return ['depenses_par_mois' => [], 'depenses_par_categorie' => []];
+            return ['depenses_par_mois' => [], 'recettes_par_mois' => [], 'net_par_mois' => [], 'depenses_par_categorie' => [], 'top_profitable' => []];
         }
     }
     
@@ -262,13 +302,33 @@ class FinancesManager {
             $sql = "SELECT SUM(montant) as total FROM depenses WHERE DATE_FORMAT(date, '%Y-%m') = ?";
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute([$currentMonth]);
-            $totalMois = $stmt->fetchColumn() ?: 0;
+            $totalDepensesMois = $stmt->fetchColumn() ?: 0;
             
             // Total dépenses cumulées cette année
             $sql = "SELECT SUM(montant) as total FROM depenses WHERE YEAR(date) = ?";
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute([$currentYear]);
-            $totalAnnee = $stmt->fetchColumn() ?: 0;
+            $totalDepensesAnnee = $stmt->fetchColumn() ?: 0;
+
+            // Recettes (ventes) ce mois
+            try {
+                $sql = "SELECT SUM(COALESCE(v.total, v.quantite * v.prix_unitaire, 0)) FROM ventes v WHERE DATE_FORMAT(date_vente, '%Y-%m') = ?";
+                $stmt = $this->pdo->prepare($sql);
+                $stmt->execute([$currentMonth]);
+                $totalRecettesMois = $stmt->fetchColumn() ?: 0;
+            } catch (Throwable $e) {
+                $totalRecettesMois = 0;
+            }
+
+            // Recettes cumulées cette année
+            try {
+                $sql = "SELECT SUM(COALESCE(v.total, v.quantite * v.prix_unitaire, 0)) FROM ventes v WHERE YEAR(date_vente) = ?";
+                $stmt = $this->pdo->prepare($sql);
+                $stmt->execute([$currentYear]);
+                $totalRecettesAnnee = $stmt->fetchColumn() ?: 0;
+            } catch (Throwable $e) {
+                $totalRecettesAnnee = 0;
+            }
             
             // Catégorie la plus coûteuse ce mois
             $sql = "SELECT c.nom, SUM(d.montant) as total 
@@ -289,16 +349,24 @@ class FinancesManager {
             $nombreDepenses = $stmt->fetchColumn() ?: 0;
             
             return [
-                'total_mois' => $totalMois,
-                'total_annee' => $totalAnnee,
+                'total_depenses_mois' => (float)$totalDepensesMois,
+                'total_depenses_annee' => (float)$totalDepensesAnnee,
+                'total_recettes_mois' => (float)$totalRecettesMois,
+                'total_recettes_annee' => (float)$totalRecettesAnnee,
+                'benefice_net_mois' => (float)($totalRecettesMois - $totalDepensesMois),
+                'benefice_net_annee' => (float)($totalRecettesAnnee - $totalDepensesAnnee),
                 'categorie_max' => $categorieMax,
                 'nombre_depenses' => $nombreDepenses
             ];
         } catch (PDOException $e) {
             error_log("Erreur getFinancialIndicators: " . $e->getMessage());
             return [
-                'total_mois' => 0,
-                'total_annee' => 0,
+                'total_depenses_mois' => 0,
+                'total_depenses_annee' => 0,
+                'total_recettes_mois' => 0,
+                'total_recettes_annee' => 0,
+                'benefice_net_mois' => 0,
+                'benefice_net_annee' => 0,
                 'categorie_max' => null,
                 'nombre_depenses' => 0
             ];
@@ -552,26 +620,37 @@ ob_start();
 
 <!-- Indicateurs financiers -->
 <div class="finance-indicators">
-    <div class="finance-card success">
+    <div class="finance-card danger">
         <div class="finance-card-header">
-            <h3 class="finance-card-title">Total ce mois</h3>
+            <h3 class="finance-card-title">Dépenses (mois)</h3>
             <div class="finance-card-icon">
-                <i class="fas fa-euro-sign"></i>
+                <i class="fas fa-receipt"></i>
             </div>
         </div>
-        <div class="finance-card-value"><?php echo number_format($indicators['total_mois'], 2); ?>€</div>
+        <div class="finance-card-value"><?php echo number_format($indicators['total_depenses_mois'], 2); ?>€</div>
         <div class="finance-card-subtitle"><?php echo $indicators['nombre_depenses']; ?> dépenses</div>
     </div>
     
+    <div class="finance-card success">
+        <div class="finance-card-header">
+            <h3 class="finance-card-title">Recettes (mois)</h3>
+            <div class="finance-card-icon">
+                <i class="fas fa-cash-register"></i>
+            </div>
+    </div>
+        <div class="finance-card-value"><?php echo number_format($indicators['total_recettes_mois'], 2); ?>€</div>
+        <div class="finance-card-subtitle">Ventes</div>
+    </div>
+
     <div class="finance-card info">
         <div class="finance-card-header">
-            <h3 class="finance-card-title">Total annuel</h3>
+            <h3 class="finance-card-title">Bénéfice net (mois)</h3>
             <div class="finance-card-icon">
                 <i class="fas fa-chart-line"></i>
             </div>
         </div>
-        <div class="finance-card-value"><?php echo number_format($indicators['total_annee'], 2); ?>€</div>
-        <div class="finance-card-subtitle">Année <?php echo date('Y'); ?></div>
+        <div class="finance-card-value"><?php echo number_format($indicators['benefice_net_mois'], 2); ?>€</div>
+        <div class="finance-card-subtitle">Recettes - Dépenses</div>
     </div>
     
     <div class="finance-card warning">
@@ -589,15 +668,15 @@ ob_start();
         </div>
     </div>
     
-    <div class="finance-card danger">
+    <div class="finance-card warning">
         <div class="finance-card-header">
-            <h3 class="finance-card-title">Alertes budget</h3>
+            <h3 class="finance-card-title">Bénéfice net (année)</h3>
             <div class="finance-card-icon">
-                <i class="fas fa-exclamation-triangle"></i>
+                <i class="fas fa-coins"></i>
             </div>
         </div>
-        <div class="finance-card-value"><?php echo count(array_filter($budgetAlerts, fn($b) => $b['statut'] !== 'normal')); ?></div>
-        <div class="finance-card-subtitle">Dépassements détectés</div>
+        <div class="finance-card-value"><?php echo number_format($indicators['benefice_net_annee'], 2); ?>€</div>
+        <div class="finance-card-subtitle">Année <?php echo date('Y'); ?></div>
     </div>
 </div>
 
@@ -791,7 +870,23 @@ ob_start();
                     <h3 class="finance-chart-title">Dépenses par Mois</h3>
                 </div>
                 <div class="finance-chart-canvas">
-                    <canvas id="monthlyChart"></canvas>
+                    <canvas id="monthlyExpensesChart"></canvas>
+                </div>
+            </div>
+            <div class="finance-chart-container">
+                <div class="finance-chart-header">
+                    <h3 class="finance-chart-title">Recettes par Mois</h3>
+                </div>
+                <div class="finance-chart-canvas">
+                    <canvas id="monthlyRevenueChart"></canvas>
+                </div>
+            </div>
+            <div class="finance-chart-container">
+                <div class="finance-chart-header">
+                    <h3 class="finance-chart-title">Bénéfice net par Mois</h3>
+                </div>
+                <div class="finance-chart-canvas">
+                    <canvas id="monthlyNetChart"></canvas>
                 </div>
             </div>
             
@@ -801,6 +896,35 @@ ob_start();
                 </div>
                 <div class="finance-chart-canvas">
                     <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="margin-top: var(--spacing-xl)">
+            <div class="card-header">
+                <h3 class="card-title">Top 5 articles les plus rentables</h3>
+                <p class="card-subtitle">Calculé sur l'ensemble des ventes enregistrées</p>
+            </div>
+            <div class="card-body">
+                <div class="finance-table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Article</th>
+                                <th>Bénéfice (€)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <?php if (empty($reports['top_profitable'])): ?>
+                            <tr><td colspan="2" class="text-center">Aucune donnée</td></tr>
+                        <?php else: foreach ($reports['top_profitable'] as $row): ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($row['nom_article']); ?></td>
+                                <td><?php echo number_format((float)$row['benefice'], 2); ?>€</td>
+                            </tr>
+                        <?php endforeach; endif; ?>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -1100,7 +1224,9 @@ ob_start();
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 // Données pour les graphiques
-const monthlyData = <?php echo json_encode($reports['depenses_par_mois']); ?>;
+const monthlyExpenses = <?php echo json_encode($reports['depenses_par_mois']); ?>;
+const monthlyRevenue = <?php echo json_encode($reports['recettes_par_mois']); ?>;
+const monthlyNet = <?php echo json_encode($reports['net_par_mois']); ?>;
 const categoryData = <?php echo json_encode($reports['depenses_par_categorie']); ?>;
 
 // Gestion des onglets
@@ -1132,26 +1258,28 @@ function showFinanceSection(sectionName) {
 
 // Initialisation des graphiques
 function initCharts() {
-    // Graphique des dépenses mensuelles
-    const monthlyCtx = document.getElementById('monthlyChart');
-    if (monthlyCtx && !monthlyCtx.chart) {
+    const monthNames = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
+
+    // Dépenses mensuelles
+    const expensesCtx = document.getElementById('monthlyExpensesChart');
+    if (expensesCtx && !expensesCtx.chart) {
         const monthNames = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
-        const monthlyLabels = [];
-        const monthlyValues = [];
+        const labels = [];
+        const values = [];
         
         for (let i = 1; i <= 12; i++) {
-            monthlyLabels.push(monthNames[i-1]);
-            const found = monthlyData.find(item => parseInt(item.mois) === i);
-            monthlyValues.push(found ? parseFloat(found.total) : 0);
+            labels.push(monthNames[i-1]);
+            const found = monthlyExpenses.find(item => parseInt(item.mois) === i);
+            values.push(found ? parseFloat(found.total) : 0);
         }
         
-        monthlyCtx.chart = new Chart(monthlyCtx, {
+        expensesCtx.chart = new Chart(expensesCtx, {
             type: 'line',
             data: {
-                labels: monthlyLabels,
+                labels: labels,
                 datasets: [{
                     label: 'Dépenses (€)',
-                    data: monthlyValues,
+                    data: values,
                     borderColor: '#10B981',
                     backgroundColor: 'rgba(16, 185, 129, 0.1)',
                     tension: 0.4,
@@ -1180,6 +1308,60 @@ function initCharts() {
         });
     }
     
+    // Recettes mensuelles
+    const revenueCtx = document.getElementById('monthlyRevenueChart');
+    if (revenueCtx && !revenueCtx.chart) {
+        const labels = [];
+        const values = [];
+        for (let i = 1; i <= 12; i++) {
+            labels.push(monthNames[i-1]);
+            const found = monthlyRevenue.find(item => parseInt(item.mois) === i);
+            values.push(found ? parseFloat(found.total) : 0);
+        }
+        revenueCtx.chart = new Chart(revenueCtx, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [{
+                    label: 'Recettes (€)',
+                    data: values,
+                    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                    borderColor: '#3B82F6',
+                    borderWidth: 2,
+                    borderRadius: 6,
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+        });
+    }
+
+    // Bénéfice net mensuel
+    const netCtx = document.getElementById('monthlyNetChart');
+    if (netCtx && !netCtx.chart) {
+        const labels = [];
+        const values = [];
+        for (let i = 1; i <= 12; i++) {
+            labels.push(monthNames[i-1]);
+            const found = monthlyNet.find(item => parseInt(item.mois) === i);
+            values.push(found ? parseFloat(found.total) : 0);
+        }
+        netCtx.chart = new Chart(netCtx, {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [{
+                    label: 'Bénéfice net (€)',
+                    data: values,
+                    borderColor: '#F59E0B',
+                    backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+        });
+    }
+
     // Graphique des catégories
     const categoryCtx = document.getElementById('categoryChart');
     if (categoryCtx && !categoryCtx.chart && categoryData.length > 0) {

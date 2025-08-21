@@ -91,14 +91,16 @@ class StockManager {
     }
 
     // Ajouter un article
-    public function addStock($nom, $categorie, $quantite, $seuil) {
-        $query = "INSERT INTO " . $this->table_stocks . " (nom_article, categorie, quantite, seuil) VALUES (:nom, :categorie, :quantite, :seuil)";
+    public function addStock($nom, $categorie, $quantite, $seuil, $prix_achat, $prix_vente) {
+        $query = "INSERT INTO " . $this->table_stocks . " (nom_article, categorie, quantite, seuil, prix_achat, prix_vente) VALUES (:nom, :categorie, :quantite, :seuil, :prix_achat, :prix_vente)";
         $stmt = $this->conn->prepare($query);
         
         $stmt->bindParam(":nom", $nom);
         $stmt->bindParam(":categorie", $categorie);
         $stmt->bindParam(":quantite", $quantite);
         $stmt->bindParam(":seuil", $seuil);
+        $stmt->bindParam(":prix_achat", $prix_achat);
+        $stmt->bindParam(":prix_vente", $prix_vente);
 
         if ($stmt->execute()) {
             $article_id = $this->conn->lastInsertId();
@@ -109,7 +111,7 @@ class StockManager {
     }
 
     // Modifier un article
-    public function updateStock($id, $nom, $categorie, $quantite, $seuil) {
+    public function updateStock($id, $nom, $categorie, $quantite, $seuil, $prix_achat, $prix_vente) {
         // Récupérer l'ancien état pour l'historique
         $old_query = "SELECT * FROM " . $this->table_stocks . " WHERE id = :id";
         $old_stmt = $this->conn->prepare($old_query);
@@ -117,7 +119,7 @@ class StockManager {
         $old_stmt->execute();
         $old_data = $old_stmt->fetch(PDO::FETCH_ASSOC);
 
-        $query = "UPDATE " . $this->table_stocks . " SET nom_article = :nom, categorie = :categorie, quantite = :quantite, seuil = :seuil WHERE id = :id";
+        $query = "UPDATE " . $this->table_stocks . " SET nom_article = :nom, categorie = :categorie, quantite = :quantite, seuil = :seuil, prix_achat = :prix_achat, prix_vente = :prix_vente WHERE id = :id";
         $stmt = $this->conn->prepare($query);
         
         $stmt->bindParam(":id", $id);
@@ -125,9 +127,11 @@ class StockManager {
         $stmt->bindParam(":categorie", $categorie);
         $stmt->bindParam(":quantite", $quantite);
         $stmt->bindParam(":seuil", $seuil);
+        $stmt->bindParam(":prix_achat", $prix_achat);
+        $stmt->bindParam(":prix_vente", $prix_vente);
 
         if ($stmt->execute()) {
-            $details = "Modification de $nom - Quantité: {$old_data['quantite']} → $quantite, Seuil: {$old_data['seuil']} → $seuil";
+            $details = "Modification de $nom - Quantité: {$old_data['quantite']} → $quantite, Seuil: {$old_data['seuil']} → $seuil, Prix achat: " . ($old_data['prix_achat'] ?? '0') . " → $prix_achat, Prix vente: " . ($old_data['prix_vente'] ?? '0') . " → $prix_vente";
             $this->logMovement($id, 'modification', $details, 'admin');
             return true;
         }
@@ -221,8 +225,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $categorie = trim($_POST['categorie']);
                 $quantite = intval($_POST['quantite']);
                 $seuil = intval($_POST['seuil']);
+                $prix_achat = isset($_POST['prix_achat']) ? (float) $_POST['prix_achat'] : 0.0;
+                $prix_vente = isset($_POST['prix_vente']) ? (float) $_POST['prix_vente'] : 0.0;
                 
-                if ($stockManager->addStock($nom, $categorie, $quantite, $seuil)) {
+                if ($stockManager->addStock($nom, $categorie, $quantite, $seuil, $prix_achat, $prix_vente)) {
                     $message = "Article ajouté avec succès !";
                     $message_type = "success";
                 } else {
@@ -237,8 +243,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $categorie = trim($_POST['categorie']);
                 $quantite = intval($_POST['quantite']);
                 $seuil = intval($_POST['seuil']);
+                $prix_achat = isset($_POST['prix_achat']) ? (float) $_POST['prix_achat'] : 0.0;
+                $prix_vente = isset($_POST['prix_vente']) ? (float) $_POST['prix_vente'] : 0.0;
                 
-                if ($stockManager->updateStock($id, $nom, $categorie, $quantite, $seuil)) {
+                if ($stockManager->updateStock($id, $nom, $categorie, $quantite, $seuil, $prix_achat, $prix_vente)) {
                     $message = "Article modifié avec succès !";
                     $message_type = "success";
                 } else {
@@ -405,12 +413,18 @@ renderStatsGrid($stockStats);
         // Préparer les données pour le tableau
         $stocksData = [];
         while ($row = $stocks->fetch(PDO::FETCH_ASSOC)) {
+            $prixAchat = isset($row['prix_achat']) ? (float)$row['prix_achat'] : 0.0;
+            $prixVente = isset($row['prix_vente']) ? (float)$row['prix_vente'] : 0.0;
+            $marge = $prixVente - $prixAchat;
             $stocksData[] = [
                 'id' => $row['id'],
                 'nom_article' => $row['nom_article'],
                 'categorie' => $row['categorie'],
                 'quantite' => $row['quantite'],
                 'seuil' => $row['seuil'],
+                'prix_achat' => number_format($prixAchat, 2, ',', ' '),
+                'prix_vente' => number_format($prixVente, 2, ',', ' '),
+                'marge' => number_format($marge, 2, ',', ' '),
                 'created_at' => $row['created_at'],
                 'low_stock' => $row['quantite'] <= $row['seuil']
             ];
@@ -428,6 +442,9 @@ renderStatsGrid($stockStats);
                 ['key' => 'categorie', 'label' => 'Catégorie', 'sortable' => true, 'type' => 'text'],
                 ['key' => 'quantite', 'label' => 'Quantité', 'sortable' => true, 'type' => 'number', 'class' => 'text-center'],
                 ['key' => 'seuil', 'label' => 'Seuil', 'sortable' => true, 'type' => 'number', 'class' => 'text-center'],
+                ['key' => 'prix_achat', 'label' => 'Prix achat (€)', 'sortable' => true, 'type' => 'text', 'class' => 'text-right'],
+                ['key' => 'prix_vente', 'label' => 'Prix vente (€)', 'sortable' => true, 'type' => 'text', 'class' => 'text-right'],
+                ['key' => 'marge', 'label' => 'Marge (€)', 'sortable' => true, 'type' => 'text', 'class' => 'text-right'],
                 ['key' => 'created_at', 'label' => 'Date d\'ajout', 'sortable' => true, 'type' => 'datetime']
             ],
             'actions' => [
@@ -526,6 +543,18 @@ renderStatsGrid($stockStats);
                         <input type="number" id="seuil" name="seuil" class="form-control" min="1" required>
                     </div>
                 </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-lg);">
+                    <div class="form-group">
+                        <label class="form-label" for="prix_achat">Prix d'achat (€)</label>
+                        <input type="number" step="0.01" id="prix_achat" name="prix_achat" class="form-control" min="0" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="prix_vente">Prix de vente (€)</label>
+                        <input type="number" step="0.01" id="prix_vente" name="prix_vente" class="form-control" min="0" required>
+                    </div>
+                </div>
             </div>
             
             <div class="modal-footer">
@@ -602,6 +631,8 @@ renderStatsGrid($stockStats);
                     document.getElementById('categorie').value = data.categorie;
                     document.getElementById('quantite').value = data.quantite;
                     document.getElementById('seuil').value = data.seuil;
+                    if (data.prix_achat) document.getElementById('prix_achat').value = data.prix_achat;
+                    if (data.prix_vente) document.getElementById('prix_vente').value = data.prix_vente;
                     document.getElementById('stockModal').style.display = 'block';
                     
                     // Animation d'ouverture
@@ -647,6 +678,8 @@ renderStatsGrid($stockStats);
         document.getElementById('stockForm').addEventListener('submit', function(e) {
             const quantite = parseInt(document.getElementById('quantite').value);
             const seuil = parseInt(document.getElementById('seuil').value);
+            const prixAchat = parseFloat(document.getElementById('prix_achat').value);
+            const prixVente = parseFloat(document.getElementById('prix_vente').value);
             
             if (quantite < 0) {
                 e.preventDefault();
@@ -657,6 +690,18 @@ renderStatsGrid($stockStats);
             if (seuil < 1) {
                 e.preventDefault();
                 alert('Le seuil doit être au moins de 1.');
+                return;
+            }
+
+            if (isNaN(prixAchat) || prixAchat < 0) {
+                e.preventDefault();
+                alert("Le prix d'achat doit être un nombre positif.");
+                return;
+            }
+
+            if (isNaN(prixVente) || prixVente < 0) {
+                e.preventDefault();
+                alert('Le prix de vente doit être un nombre positif.');
                 return;
             }
         });

@@ -1,6 +1,48 @@
 -- Script de mise à jour pour base de données existante
 -- Scolaria Team589 - Module Finances
 
+-- =============================
+-- Module Authentification
+-- =============================
+-- Mettre à jour la table users vers le nouveau schéma
+-- Étape 1: ajouter la colonne email en NULL pour éviter l'échec sur données existantes
+ALTER TABLE `users`
+    MODIFY COLUMN `username` varchar(100) NOT NULL,
+    ADD COLUMN IF NOT EXISTS `email` varchar(150) NULL AFTER `username`,
+    MODIFY COLUMN `password` varchar(255) NOT NULL,
+    MODIFY COLUMN `role` enum('admin','gestionnaire','caissier','utilisateur') NOT NULL DEFAULT 'utilisateur',
+    ADD COLUMN IF NOT EXISTS `created_at` timestamp NOT NULL DEFAULT current_timestamp() AFTER `role`;
+
+-- Étape 2: renseigner des emails uniques pour les enregistrements vides
+UPDATE `users` SET `email` = CONCAT(`username`, '@scolaria.local')
+WHERE (`email` IS NULL OR `email` = '') AND `username` IS NOT NULL;
+
+-- Étape 3: désambigüiser les doublons d'emails non vides restants en suffixant l'ID
+UPDATE `users` u
+JOIN (
+  SELECT `email`
+  FROM `users`
+  WHERE `email` IS NOT NULL AND `email` <> ''
+  GROUP BY `email`
+  HAVING COUNT(*) > 1
+) d ON u.`email` = d.`email`
+SET u.`email` = CASE
+  WHEN LOCATE('@', u.`email`) > 0 THEN CONCAT(SUBSTRING_INDEX(u.`email`, '@', 1), '+', u.`id`, '@', SUBSTRING_INDEX(u.`email`, '@', -1))
+  ELSE CONCAT(u.`email`, '+', u.`id`, '@scolaria.local')
+END;
+
+-- Étape 4: rendre la colonne NOT NULL après normalisation
+ALTER TABLE `users`
+  MODIFY COLUMN `email` varchar(150) NOT NULL;
+
+-- Ajouter index uniques si absents
+CREATE UNIQUE INDEX IF NOT EXISTS `uniq_users_username` ON `users` (`username`);
+CREATE UNIQUE INDEX IF NOT EXISTS `uniq_users_email` ON `users` (`email`);
+
+-- Ajouter utilisateur caissier de démo si absent
+INSERT IGNORE INTO `users` (`username`, `email`, `password`, `role`)
+VALUES ('caissier', 'caissier@scolaria.local', '$2y$10$hZqjKqZIfwWf9DqvFq4HPeE1iY2Gx1rK9rPVp3oXf7wq0sE4H3PlS', 'caissier');
+
 -- Mise à jour de la table depenses (ajouter colonnes manquantes)
 ALTER TABLE `depenses` 
 ADD COLUMN IF NOT EXISTS `categorie_id` int(11) DEFAULT NULL,
@@ -83,3 +125,35 @@ LEFT JOIN `depenses` `d` ON `d`.`categorie_id` = `b`.`categorie_id`
     AND YEAR(`d`.`date`) = `b`.`annee`
 GROUP BY `b`.`id`, `b`.`mois`, `b`.`annee`, `b`.`montant_prevu`, `c`.`nom`, `c`.`couleur`
 ORDER BY `b`.`annee` DESC, `b`.`mois` DESC;
+
+-- =============================
+-- Module Stocks
+-- =============================
+-- Ajout des colonnes de prix
+ALTER TABLE `stocks`
+    ADD COLUMN IF NOT EXISTS `prix_achat` DECIMAL(10,2) NOT NULL DEFAULT 0.00 AFTER `seuil`,
+    ADD COLUMN IF NOT EXISTS `prix_vente` DECIMAL(10,2) NOT NULL DEFAULT 0.00 AFTER `prix_achat`;
+
+-- =============================
+-- Module POS (Sales)
+-- =============================
+CREATE TABLE IF NOT EXISTS `sales` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `client_id` int(11) DEFAULT NULL,
+  `total` decimal(10,2) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `sales_items` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `sale_id` int(11) NOT NULL,
+  `product_id` int(11) NOT NULL,
+  `quantity` int(11) NOT NULL,
+  `price` decimal(10,2) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `sale_id` (`sale_id`),
+  KEY `product_id` (`product_id`),
+  CONSTRAINT `sales_items_ibfk_1` FOREIGN KEY (`sale_id`) REFERENCES `sales` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `sales_items_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `stocks` (`id`) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

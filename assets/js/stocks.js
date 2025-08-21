@@ -68,9 +68,8 @@ class StocksManager {
                 document.getElementById('movementsMetric').textContent = data.count || 0;
             })
             .catch(() => {
-                // Fallback avec une valeur simulée
-                const simulatedCount = Math.floor(Math.random() * 50) + 10;
-                document.getElementById('movementsMetric').textContent = simulatedCount;
+                // Pas de valeur simulée en prod: afficher 0
+                document.getElementById('movementsMetric').textContent = 0;
             });
     }
 
@@ -181,6 +180,8 @@ class StocksManager {
                     document.getElementById('categorie').value = data.categorie;
                     document.getElementById('quantite').value = data.quantite;
                     document.getElementById('seuil').value = data.seuil;
+                    if (data.prix_achat) document.getElementById('prix_achat').value = data.prix_achat;
+                    if (data.prix_vente) document.getElementById('prix_vente').value = data.prix_vente;
                     document.getElementById('submitBtn').textContent = 'Modifier';
                     this.openModal('stockModal');
                 }

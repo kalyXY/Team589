@@ -73,7 +73,6 @@ $additionalJS = $additionalJS ?? [];
                             <a href="alerts.php" class="nav-link <?php echo $currentPage === 'alerts' ? 'active' : ''; ?>">
                                 <div class="nav-icon"><i class="fas fa-exclamation-triangle"></i></div>
                                 <div class="nav-text">Alertes & Réappro</div>
-                                <div class="nav-badge">3</div>
                             </a>
                         </div>
                     </div>
