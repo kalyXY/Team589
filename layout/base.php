@@ -1,233 +1,213 @@
 <?php
 /**
- * SCOLARIA - Layout de base moderne
- * Structure HTML avec sidebar, header et système de thème
+ * Layout de base pour l'application Scolaria
+ * Template réutilisable avec sidebar, header et zone de contenu
+ * Team589
  */
+
+// Configuration par défaut
+$pageTitle = $pageTitle ?? 'Scolaria';
+$currentPage = $currentPage ?? '';
+$showSidebar = $showSidebar ?? true;
+$bodyClass = $bodyClass ?? '';
+$additionalCSS = $additionalCSS ?? [];
+$additionalJS = $additionalJS ?? [];
 ?>
 <!DOCTYPE html>
 <html lang="fr" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Scolaria - Gestion logistique scolaire moderne">
-    <title><?= isset($pageTitle) ? $pageTitle . ' - Scolaria' : 'Scolaria - Gestion Scolaire' ?></title>
+    <meta name="description" content="Scolaria - Application de gestion logistique scolaire">
+    <meta name="author" content="Team589">
+    <title><?php echo htmlspecialchars($pageTitle); ?> - Scolaria</title>
     
     <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="<?= BASE_URL; ?>assets/images/favicon.ico">
+    <link rel="icon" type="image/x-icon" href="assets/images/favicon.ico">
     
-    <!-- CSS -->
-    <link rel="stylesheet" href="<?= BASE_URL; ?>assets/css/style.css">
-    <?php if (isset($additionalCSS)): ?>
-        <?php foreach ($additionalCSS as $css): ?>
-            <link rel="stylesheet" href="<?= $css ?>">
-        <?php endforeach; ?>
-    <?php endif; ?>
+    <!-- CSS Principal -->
+    <link rel="stylesheet" href="assets/css/style.css">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- Chart.js pour les graphiques -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- CSS Additionnels -->
+    <?php foreach ($additionalCSS as $css): ?>
+        <link rel="stylesheet" href="<?php echo htmlspecialchars($css); ?>">
+    <?php endforeach; ?>
 </head>
-<body>
-    <div class="app-container">
-        <!-- SIDEBAR -->
-        <aside class="sidebar" id="sidebar">
-            <!-- Logo/Header de la sidebar -->
-            <div class="sidebar-header">
-                <a href="<?= BASE_URL; ?>dashboard.php" class="sidebar-logo">
-                    <i class="fas fa-graduation-cap"></i>
-                    <span>Scolaria</span>
-                </a>
-            </div>
-            
-            <!-- Navigation -->
-            <nav class="sidebar-nav">
-                <ul class="nav-list">
-                    <li class="nav-item">
-                        <a href="<?= BASE_URL; ?>dashboard.php" class="nav-link <?= ($currentPage === 'dashboard') ? 'active' : '' ?>">
-                            <i class="fas fa-tachometer-alt"></i>
-                            <span>Tableau de bord</span>
-                        </a>
-                    </li>
+<body class="<?php echo htmlspecialchars($bodyClass); ?>">
+    <div class="app-layout">
+        <?php if ($showSidebar): ?>
+            <!-- Sidebar -->
+            <aside class="sidebar" id="sidebar">
+                <!-- Logo -->
+                <div class="sidebar-logo">
+                    <div class="logo-icon">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <div class="logo-text">Scolaria</div>
+                </div>
+                
+                <!-- Navigation -->
+                <nav class="sidebar-nav">
+                    <!-- Section Principale -->
+                    <div class="nav-section">
+                        <div class="nav-section-title">Principal</div>
+                        <div class="nav-item">
+                            <a href="dashboard.php" class="nav-link <?php echo $currentPage === 'dashboard' ? 'active' : ''; ?>">
+                                <div class="nav-icon"><i class="fas fa-tachometer-alt"></i></div>
+                                <div class="nav-text">Tableau de bord</div>
+                            </a>
+                        </div>
+                        <div class="nav-item">
+                            <a href="stocks.php" class="nav-link <?php echo $currentPage === 'stocks' ? 'active' : ''; ?>">
+                                <div class="nav-icon"><i class="fas fa-boxes"></i></div>
+                                <div class="nav-text">Gestion des stocks</div>
+                            </a>
+                        </div>
+                        <div class="nav-item">
+                            <a href="alerts.php" class="nav-link <?php echo $currentPage === 'alerts' ? 'active' : ''; ?>">
+                                <div class="nav-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                                <div class="nav-text">Alertes & Réappro</div>
+                                <div class="nav-badge">3</div>
+                            </a>
+                        </div>
+                    </div>
                     
-                    <li class="nav-item">
-                        <a href="<?= BASE_URL; ?>stocks.php" class="nav-link <?= ($currentPage === 'stocks') ? 'active' : '' ?>">
-                            <i class="fas fa-boxes"></i>
-                            <span>Gestion des stocks</span>
-                        </a>
-                    </li>
+                    <!-- Section Gestion -->
+                    <div class="nav-section">
+                        <div class="nav-section-title">Gestion</div>
+                        <div class="nav-item">
+                            <a href="finances.php" class="nav-link <?php echo $currentPage === 'finances' ? 'active' : ''; ?>">
+                                <div class="nav-icon"><i class="fas fa-euro-sign"></i></div>
+                                <div class="nav-text">Finances</div>
+                            </a>
+                        </div>
+                        <div class="nav-item">
+                            <a href="resources.php" class="nav-link <?php echo $currentPage === 'resources' ? 'active' : ''; ?>">
+                                <div class="nav-icon"><i class="fas fa-archive"></i></div>
+                                <div class="nav-text">Ressources</div>
+                            </a>
+                        </div>
+                        <div class="nav-item">
+                            <a href="users.php" class="nav-link <?php echo $currentPage === 'users' ? 'active' : ''; ?>">
+                                <div class="nav-icon"><i class="fas fa-users"></i></div>
+                                <div class="nav-text">Utilisateurs</div>
+                            </a>
+                        </div>
+                    </div>
                     
-                    <li class="nav-item">
-                        <a href="<?= BASE_URL; ?>alerts.php" class="nav-link <?= ($currentPage === 'alerts') ? 'active' : '' ?>">
-                            <i class="fas fa-bell"></i>
-                            <span>Alertes & Réappro</span>
-                        </a>
-                    </li>
-                    
-                    <li class="nav-item">
-                        <a href="<?= BASE_URL; ?>finances.php" class="nav-link <?= ($currentPage === 'finances') ? 'active' : '' ?>">
-                            <i class="fas fa-chart-line"></i>
-                            <span>Gestion financière</span>
-                        </a>
-                    </li>
-                    
-                    <li class="nav-item">
-                        <a href="<?= BASE_URL; ?>resources.php" class="nav-link <?= ($currentPage === 'resources') ? 'active' : '' ?>">
-                            <i class="fas fa-layer-group"></i>
-                            <span>Ressources</span>
-                        </a>
-                    </li>
-                    
-                    <li class="nav-item">
-                        <a href="<?= BASE_URL; ?>users.php" class="nav-link <?= ($currentPage === 'users') ? 'active' : '' ?>">
-                            <i class="fas fa-users"></i>
-                            <span>Utilisateurs</span>
-                        </a>
-                    </li>
-                    
-                    <li class="nav-item">
-                        <a href="<?= BASE_URL; ?>reports.php" class="nav-link <?= ($currentPage === 'reports') ? 'active' : '' ?>">
-                            <i class="fas fa-file-alt"></i>
-                            <span>Rapports</span>
-                        </a>
-                    </li>
-                    
-                    <li class="nav-item">
-                        <a href="<?= BASE_URL; ?>settings.php" class="nav-link <?= ($currentPage === 'settings') ? 'active' : '' ?>">
-                            <i class="fas fa-cog"></i>
-                            <span>Paramètres</span>
-                        </a>
-                    </li>
-                </ul>
-            </nav>
-        </aside>
+                    <!-- Section Système -->
+                    <div class="nav-section">
+                        <div class="nav-section-title">Système</div>
+                        <div class="nav-item">
+                            <a href="settings.php" class="nav-link <?php echo $currentPage === 'settings' ? 'active' : ''; ?>">
+                                <div class="nav-icon"><i class="fas fa-cog"></i></div>
+                                <div class="nav-text">Paramètres</div>
+                            </a>
+                        </div>
+                        <div class="nav-item">
+                            <a href="reports.php" class="nav-link <?php echo $currentPage === 'reports' ? 'active' : ''; ?>">
+                                <div class="nav-icon"><i class="fas fa-chart-bar"></i></div>
+                                <div class="nav-text">Rapports</div>
+                            </a>
+                        </div>
+                        <div class="nav-item">
+                            <a href="logout.php" class="nav-link">
+                                <div class="nav-icon"><i class="fas fa-sign-out-alt"></i></div>
+                                <div class="nav-text">Déconnexion</div>
+                            </a>
+                        </div>
+                    </div>
+                </nav>
+            </aside>
+        <?php endif; ?>
         
-        <!-- CONTENU PRINCIPAL -->
+        <!-- Contenu Principal -->
         <main class="main-content">
-            <!-- HEADER -->
-            <header class="header">
+            <!-- Header -->
+            <header class="app-header">
                 <div class="header-left">
-                    <button class="sidebar-toggle" id="sidebarToggle">
-                        <i class="fas fa-bars"></i>
-                    </button>
-                    <h1 class="page-title"><?= $pageTitle ?? 'Tableau de bord' ?></h1>
+                    <?php if ($showSidebar): ?>
+                        <button class="sidebar-toggle" data-tooltip="Toggle Sidebar (Ctrl+B)">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                    <?php endif; ?>
+                    <h1 class="page-title"><?php echo htmlspecialchars($pageTitle); ?></h1>
                 </div>
                 
                 <div class="header-right">
                     <!-- Toggle Dark Mode -->
-                    <button class="theme-toggle" id="themeToggle">
-                        <i class="fas fa-moon" id="themeIcon"></i>
-                        <span id="themeText">Sombre</span>
+                    <button class="theme-toggle" data-tooltip="Changer de thème (Ctrl+D)">
+                        <i class="fas fa-moon"></i>
                     </button>
                     
                     <!-- Notifications -->
-                    <div class="notifications" id="notifications">
-                        <button class="btn-ghost" onclick="toggleNotifications()">
-                            <i class="fas fa-bell"></i>
-                            <span class="notification-badge" id="notificationBadge">3</span>
-                        </button>
-                        
-                        <div class="notifications-dropdown" id="notificationsDropdown">
-                            <div class="notifications-header">
-                                <h4>Notifications</h4>
-                                <button class="btn-ghost btn-sm">Tout marquer lu</button>
-                            </div>
-                            <div class="notifications-list">
-                                <div class="notification-item unread">
-                                    <i class="fas fa-exclamation-triangle text-warning"></i>
-                                    <div>
-                                        <p>Stock faible: Cahiers A4</p>
-                                        <small>Il y a 2 heures</small>
-                                    </div>
-                                </div>
-                                <div class="notification-item">
-                                    <i class="fas fa-check-circle text-success"></i>
-                                    <div>
-                                        <p>Commande livrée</p>
-                                        <small>Il y a 1 jour</small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <button class="notifications-btn" data-tooltip="Notifications">
+                        <i class="fas fa-bell"></i>
+                        <span class="notifications-badge" style="display: none;">0</span>
+                    </button>
                     
                     <!-- Menu Utilisateur -->
-                    <div class="user-menu" onclick="toggleUserMenu()">
+                    <div class="user-menu" data-tooltip="Menu utilisateur">
                         <div class="user-avatar">
-                            <?= strtoupper(substr($username ?? 'U', 0, 1)) ?>
+                            <?php echo strtoupper(substr($_SESSION['username'] ?? 'U', 0, 1)); ?>
                         </div>
                         <div class="user-info">
-                            <h4><?= $username ?? 'Utilisateur' ?></h4>
-                            <span><?= $role ?? 'Utilisateur' ?></span>
+                            <div class="user-name"><?php echo htmlspecialchars($_SESSION['username'] ?? 'Utilisateur'); ?></div>
+                            <div class="user-role"><?php echo htmlspecialchars($_SESSION['role'] ?? 'Utilisateur'); ?></div>
                         </div>
-                        <i class="fas fa-chevron-down"></i>
-                    </div>
-                    
-                    <!-- Dropdown Menu Utilisateur -->
-                    <div class="user-dropdown" id="userDropdown">
-                        <a href="<?= BASE_URL; ?>profile.php" class="dropdown-item">
-                            <i class="fas fa-user"></i>
-                            Mon profil
-                        </a>
-                        <a href="<?= BASE_URL; ?>settings.php" class="dropdown-item">
-                            <i class="fas fa-cog"></i>
-                            Paramètres
-                        </a>
-                        <div class="dropdown-divider"></div>
-                        <a href="<?= BASE_URL; ?>logout.php" class="dropdown-item">
-                            <i class="fas fa-sign-out-alt"></i>
-                            Déconnexion
-                        </a>
                     </div>
                 </div>
             </header>
             
-            <!-- CONTENU DE LA PAGE -->
-            <div class="content">
-                <?php if (isset($breadcrumb) && !empty($breadcrumb)): ?>
-                    <nav class="breadcrumb">
-                        <?php foreach ($breadcrumb as $index => $crumb): ?>
-                            <?php if ($index === count($breadcrumb) - 1): ?>
-                                <span class="breadcrumb-current"><?= $crumb['title'] ?></span>
-                            <?php else: ?>
-                                <a href="<?= $crumb['url'] ?>" class="breadcrumb-link"><?= $crumb['title'] ?></a>
-                                <i class="fas fa-chevron-right"></i>
-                            <?php endif; ?>
-                        <?php endforeach; ?>
-                    </nav>
-                <?php endif; ?>
-                
-                <!-- Messages Flash -->
-                <?php if (isset($_SESSION['flash_message'])): ?>
-                    <div class="alert alert-<?= $_SESSION['flash_type'] ?? 'info' ?> animate-slide-in">
-                        <i class="fas fa-<?= $_SESSION['flash_type'] === 'success' ? 'check-circle' : ($_SESSION['flash_type'] === 'error' ? 'exclamation-triangle' : 'info-circle') ?>"></i>
-                        <?= $_SESSION['flash_message'] ?>
-                    </div>
-                    <?php 
-                    unset($_SESSION['flash_message'], $_SESSION['flash_type']);
-                    ?>
-                <?php endif; ?>
-                
-                <!-- Contenu principal de la page -->
-                <?= $content ?? '' ?>
+            <!-- Zone de Contenu -->
+            <div class="content-area">
+                <?php
+                // Afficher le contenu de la page
+                if (isset($content)) {
+                    echo $content;
+                } else {
+                    // Contenu par défaut ou inclusion de fichier
+                    if (isset($contentFile) && file_exists($contentFile)) {
+                        include $contentFile;
+                    }
+                }
+                ?>
             </div>
         </main>
     </div>
     
-    <!-- Mobile Overlay -->
-    <div class="mobile-overlay" id="mobileOverlay" onclick="closeSidebar()"></div>
+    <!-- JavaScript Principal -->
+    <script src="assets/js/main.js"></script>
     
-    <!-- JavaScript -->
-    <script src="<?= BASE_URL; ?>assets/js/main.js"></script>
-    <?php if (isset($additionalJS)): ?>
-        <?php foreach ($additionalJS as $js): ?>
-            <script src="<?= $js ?>"></script>
-        <?php endforeach; ?>
-    <?php endif; ?>
+    <!-- JavaScript Additionnels -->
+    <?php foreach ($additionalJS as $js): ?>
+        <script src="<?php echo htmlspecialchars($js); ?>"></script>
+    <?php endforeach; ?>
     
-    <!-- Page specific scripts -->
-    <?php if (isset($inlineJS)): ?>
-        <script>
-            <?= $inlineJS ?>
-        </script>
-    <?php endif; ?>
+    <!-- Script d'initialisation -->
+    <script>
+        // Configuration spécifique à la page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Marquer la page active
+            const currentPage = '<?php echo $currentPage; ?>';
+            if (currentPage) {
+                const activeLink = document.querySelector(`.nav-link[href*="${currentPage}"]`);
+                if (activeLink) {
+                    activeLink.classList.add('active');
+                }
+            }
+            
+            // Initialisation spécifique à la page
+            if (typeof pageInit === 'function') {
+                pageInit();
+            }
+        });
+    </script>
 </body>
 </html>

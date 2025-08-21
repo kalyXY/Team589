@@ -1,19 +1,31 @@
 <?php
 /**
  * Module Gestion des Stocks - Scolaria (Team589)
- * Application de gestion de logistique scolaire
- * 
- * Fonctionnalités :
- * - Liste des articles
- * - Ajout/Modification/Suppression d'articles
- * - Recherche et filtres
- * - Historique des mouvements
+ * Application de gestion de logistique scolaire avec nouveau design
  */
 
 session_start();
 
-// Configuration de la base de données
-class Database {
+// Simulation de session utilisateur si nécessaire
+if (!isset($_SESSION['username'])) {
+    $_SESSION['username'] = 'Admin';
+    $_SESSION['role'] = 'admin';
+    $_SESSION['user_id'] = 1;
+}
+
+require_once __DIR__ . '/config/config.php';
+require_once __DIR__ . '/config/db.php';
+require_once __DIR__ . '/components/stats-card.php';
+require_once __DIR__ . '/components/data-table.php';
+
+// Configuration de la page
+$currentPage = 'stocks';
+$pageTitle = 'Gestion des Stocks';
+$additionalCSS = [];
+$additionalJS = ['assets/js/stocks.js'];
+
+// Configuration de la base de données (fallback si config non disponible)
+class StockDatabase {
     private $host = "localhost";
     private $db_name = "scolaria";
     private $username = "root";
@@ -21,6 +33,15 @@ class Database {
     private $conn;
 
     public function getConnection() {
+        // Essayer d'utiliser la classe Database globale d'abord
+        if (class_exists('Database')) {
+            try {
+                return Database::getConnection();
+            } catch (Exception $e) {
+                // Fallback vers la connexion locale
+            }
+        }
+        
         $this->conn = null;
         try {
             $this->conn = new PDO("mysql:host=" . $this->host . ";dbname=" . $this->db_name, $this->username, $this->password);
@@ -184,7 +205,7 @@ class StockManager {
 }
 
 // Traitement des requêtes AJAX et POST
-$database = new Database();
+$database = new StockDatabase();
 $db = $database->getConnection();
 $stockManager = new StockManager($db);
 
@@ -279,409 +300,276 @@ $low_stock_only = isset($_GET['low_stock']);
 $stocks = $stockManager->listStocks($search, $category_filter, $low_stock_only);
 $categories = $stockManager->getCategories();
 $movements = $stockManager->getMovements(20);
+// Début du contenu HTML
+ob_start();
 ?>
 
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestion des Stocks - Scolaria</title>
-    <link rel="stylesheet" href="stocks.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-</head>
-<body class="app-layout">
-    <!-- Header professionnel -->
-    <header class="app-header">
-        <div class="header-container">
-            <div class="logo-section">
-                <div class="logo">
-                    <i class="fas fa-graduation-cap"></i>
-                </div>
-                <div class="brand-info">
-                    <h1>Scolaria</h1>
-                    <p class="subtitle">Gestion des Stocks</p>
-                </div>
-            </div>
-            <div class="header-actions">
-                <div class="user-info">
-                    <div class="user-avatar">A</div>
-                    <span class="user-name">Admin</span>
-                </div>
-            </div>
-        </div>
-    </header>
+<!-- Messages de notification -->
+<?php if ($message): ?>
+    <div class="alert alert-<?php echo $message_type; ?>">
+        <i class="alert-icon fas <?php echo $message_type == 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'; ?>"></i>
+        <div><?php echo $message; ?></div>
+    </div>
+<?php endif; ?>
 
-    <!-- Section Hero -->
-    <section class="hero-section">
-        <div class="container">
-            <div class="hero-content">
-                <h1 class="hero-title">
-                    <span class="icon"><i class="fas fa-boxes"></i></span>
-                    Module de Gestion des Stocks
-                </h1>
-                <p class="hero-subtitle">
-                    Solution professionnelle pour la gestion de logistique scolaire - Team589
-                </p>
-                <div class="hero-stats" id="heroStats">
-                    <div class="stat-item">
-                        <span class="stat-number" id="totalArticles">-</span>
-                        <span class="stat-label">Articles</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-number" id="lowStockCount">-</span>
-                        <span class="stat-label">Stocks faibles</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-number" id="totalMovements">-</span>
-                        <span class="stat-label">Mouvements</span>
-                    </div>
-                </div>
+<!-- Statistiques -->
+<?php
+$stockStats = [
+    [
+        'title' => 'Total Articles',
+        'value' => 0,
+        'icon' => 'fas fa-boxes',
+        'type' => 'primary',
+        'subtitle' => 'Articles en stock'
+    ],
+    [
+        'title' => 'Stocks Faibles',
+        'value' => 0,
+        'icon' => 'fas fa-exclamation-triangle',
+        'type' => 'warning',
+        'subtitle' => 'Nécessitent attention'
+    ],
+    [
+        'title' => 'Catégories',
+        'value' => 0,
+        'icon' => 'fas fa-tags',
+        'type' => 'success',
+        'subtitle' => 'Types d\'articles'
+    ],
+    [
+        'title' => 'Mouvements',
+        'value' => 0,
+        'icon' => 'fas fa-history',
+        'type' => 'info',
+        'subtitle' => 'Activité récente'
+    ]
+];
+renderStatsGrid($stockStats);
+?>
+
+<!-- Section des contrôles -->
+<div class="card" style="margin-bottom: var(--spacing-lg);">
+    <div class="card-header">
+        <h3 class="card-title">Recherche et Filtres</h3>
+    </div>
+    <div class="card-body">
+        <div style="display: flex; gap: var(--spacing-lg); align-items: end; flex-wrap: wrap;">
+            <div class="form-group" style="flex: 1; min-width: 250px; margin-bottom: 0;">
+                <label class="form-label">Rechercher</label>
+                <input type="text" id="searchInput" class="form-control" placeholder="Rechercher par nom ou catégorie..." value="<?php echo htmlspecialchars($search); ?>">
             </div>
-        </div>
-    </section>
-
-    <div class="container">
-
-        <?php if ($message): ?>
-            <div class="alert alert-<?php echo $message_type; ?>">
-                <i class="fas fa-<?php echo $message_type == 'success' ? 'check-circle' : 'exclamation-triangle'; ?>"></i>
-                <?php echo $message; ?>
+            
+            <div class="form-group" style="min-width: 200px; margin-bottom: 0;">
+                <label class="form-label">Catégorie</label>
+                <select id="categoryFilter" class="form-control">
+                    <option value="">Toutes les catégories</option>
+                    <?php while ($cat = $categories->fetch(PDO::FETCH_ASSOC)): ?>
+                        <option value="<?php echo htmlspecialchars($cat['categorie']); ?>" 
+                                <?php echo $category_filter == $cat['categorie'] ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($cat['categorie']); ?>
+                        </option>
+                    <?php endwhile; ?>
+                </select>
             </div>
-        <?php endif; ?>
-
-        <div class="dashboard">
-            <!-- Métriques du dashboard -->
-            <div class="dashboard-metrics">
-                <div class="metric-card">
-                    <div class="metric-header">
-                        <span class="metric-title">Total Articles</span>
-                        <div class="metric-icon">
-                            <i class="fas fa-boxes"></i>
-                        </div>
-                    </div>
-                    <div class="metric-value" id="totalArticlesMetric">0</div>
-                    <div class="metric-change neutral">
-                        <i class="fas fa-minus"></i>
-                        <span>Aucun changement</span>
-                    </div>
-                </div>
-                
-                <div class="metric-card">
-                    <div class="metric-header">
-                        <span class="metric-title">Stocks Faibles</span>
-                        <div class="metric-icon" style="background: linear-gradient(135deg, #dc2626, #ef4444);">
-                            <i class="fas fa-exclamation-triangle"></i>
-                        </div>
-                    </div>
-                    <div class="metric-value" id="lowStockMetric">0</div>
-                    <div class="metric-change negative">
-                        <i class="fas fa-arrow-down"></i>
-                        <span>Attention requise</span>
-                    </div>
-                </div>
-                
-                <div class="metric-card">
-                    <div class="metric-header">
-                        <span class="metric-title">Catégories</span>
-                        <div class="metric-icon" style="background: linear-gradient(135deg, #059669, #10b981);">
-                            <i class="fas fa-tags"></i>
-                        </div>
-                    </div>
-                    <div class="metric-value" id="categoriesMetric">0</div>
-                    <div class="metric-change positive">
-                        <i class="fas fa-arrow-up"></i>
-                        <span>Bien organisé</span>
-                    </div>
-                </div>
-                
-                <div class="metric-card">
-                    <div class="metric-header">
-                        <span class="metric-title">Mouvements</span>
-                        <div class="metric-icon" style="background: linear-gradient(135deg, #d97706, #f59e0b);">
-                            <i class="fas fa-history"></i>
-                        </div>
-                    </div>
-                    <div class="metric-value" id="movementsMetric">0</div>
-                    <div class="metric-change positive">
-                        <i class="fas fa-chart-line"></i>
-                        <span>Activité récente</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Section des contrôles -->
-            <div class="controls-section">
-                <div class="search-filters">
-                    <div class="search-box">
-                        <i class="fas fa-search"></i>
-                        <input type="text" id="searchInput" placeholder="Rechercher par nom ou catégorie..." value="<?php echo htmlspecialchars($search); ?>">
-                    </div>
-                    
-                    <div class="filters">
-                        <select id="categoryFilter">
-                            <option value="">Toutes les catégories</option>
-                            <?php while ($cat = $categories->fetch(PDO::FETCH_ASSOC)): ?>
-                                <option value="<?php echo htmlspecialchars($cat['categorie']); ?>" 
-                                        <?php echo $category_filter == $cat['categorie'] ? 'selected' : ''; ?>>
-                                    <?php echo htmlspecialchars($cat['categorie']); ?>
-                                </option>
-                            <?php endwhile; ?>
-                        </select>
-                        
-                        <label class="checkbox-filter">
-                            <input type="checkbox" id="lowStockFilter" <?php echo $low_stock_only ? 'checked' : ''; ?>>
-                            <span>Stock faible uniquement</span>
-                        </label>
-                    </div>
-                </div>
-                
-                <button class="btn btn-primary" onclick="openAddModal()">
-                    <i class="fas fa-plus"></i> Ajouter un article
-                </button>
-            </div>
-
-            <!-- Section principale avec onglets -->
-            <div class="tabs">
-                <button class="tab-button active" onclick="showTab('stocks')">
-                    <i class="fas fa-list"></i> Liste des Articles
-                </button>
-                <button class="tab-button" onclick="showTab('history')">
-                    <i class="fas fa-history"></i> Historique
-                </button>
-            </div>
-
-            <!-- Onglet Liste des articles -->
-            <div id="stocks-tab" class="tab-content active">
-                <div class="table-container">
-                    <table class="stocks-table" id="stocksTable">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Nom de l'article</th>
-                                <th>Catégorie</th>
-                                <th>Quantité</th>
-                                <th>Seuil</th>
-                                <th>Date d'ajout</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php while ($row = $stocks->fetch(PDO::FETCH_ASSOC)): ?>
-                                <tr class="<?php echo $row['quantite'] <= $row['seuil'] ? 'low-stock' : ''; ?>">
-                                    <td><?php echo $row['id']; ?></td>
-                                    <td>
-                                        <strong><?php echo htmlspecialchars($row['nom_article']); ?></strong>
-                                        <?php if ($row['quantite'] <= $row['seuil']): ?>
-                                            <span class="alert-badge"><i class="fas fa-exclamation-triangle"></i> Stock faible</span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td><?php echo htmlspecialchars($row['categorie']); ?></td>
-                                    <td>
-                                        <span class="quantity <?php echo $row['quantite'] <= $row['seuil'] ? 'low' : ''; ?>">
-                                            <?php echo $row['quantite']; ?>
-                                        </span>
-                                    </td>
-                                    <td><?php echo $row['seuil']; ?></td>
-                                    <td><?php echo date('d/m/Y H:i', strtotime($row['created_at'])); ?></td>
-                                    <td class="actions">
-                                        <button class="btn btn-edit" onclick="openEditModal(<?php echo $row['id']; ?>)">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button class="btn btn-delete" onclick="confirmDelete(<?php echo $row['id']; ?>, '<?php echo addslashes($row['nom_article']); ?>')">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                            <?php endwhile; ?>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Onglet Historique -->
-            <div id="history-tab" class="tab-content">
-                <div class="table-container">
-                    <table class="history-table">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Action</th>
-                                <th>Article</th>
-                                <th>Détails</th>
-                                <th>Utilisateur</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php while ($movement = $movements->fetch(PDO::FETCH_ASSOC)): ?>
-                                <tr>
-                                    <td><?php echo date('d/m/Y H:i:s', strtotime($movement['date_mouvement'])); ?></td>
-                                    <td>
-                                        <span class="action-badge action-<?php echo $movement['action']; ?>">
-                                            <i class="fas fa-<?php echo $movement['action'] == 'ajout' ? 'plus' : ($movement['action'] == 'modification' ? 'edit' : 'trash'); ?>"></i>
-                                            <?php echo ucfirst($movement['action']); ?>
-                                        </span>
-                                    </td>
-                                    <td><?php echo htmlspecialchars($movement['nom_article'] ?? 'Article supprimé'); ?></td>
-                                    <td><?php echo htmlspecialchars($movement['details']); ?></td>
-                                    <td><?php echo htmlspecialchars($movement['utilisateur']); ?></td>
-                                </tr>
-                            <?php endwhile; ?>
-                        </tbody>
-                    </table>
+            
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" style="visibility: hidden;">Action</label>
+                <div style="display: flex; align-items: center; gap: var(--spacing-md);">
+                    <label style="display: flex; align-items: center; gap: var(--spacing-sm); cursor: pointer;">
+                        <input type="checkbox" id="lowStockFilter" <?php echo $low_stock_only ? 'checked' : ''; ?>>
+                        <span>Stock faible uniquement</span>
+                    </label>
+                    <button class="btn btn-primary" onclick="openAddModal()">
+                        <i class="fas fa-plus"></i> Ajouter un article
+                    </button>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Modal pour ajouter/modifier un article -->
-    <div id="stockModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="modalTitle"><i class="fas fa-plus-circle"></i> Ajouter un article</h2>
-                <span class="close" onclick="closeModal()">&times;</span>
-            </div>
-            <form id="stockForm" method="POST">
+<!-- Navigation par onglets -->
+<div class="card">
+    <div style="display: flex; border-bottom: 1px solid var(--border-color);">
+        <button class="btn btn-ghost" id="stocksTab" onclick="showTab('stocks')" style="border-radius: 0; border-bottom: 3px solid var(--primary-color);">
+            <i class="fas fa-list"></i> Liste des Articles
+        </button>
+        <button class="btn btn-ghost" id="historyTab" onclick="showTab('history')" style="border-radius: 0; border-bottom: 3px solid transparent;">
+            <i class="fas fa-history"></i> Historique
+        </button>
+    </div>
+
+    <!-- Onglet Liste des articles -->
+    <div id="stocks-tab" class="tab-content" style="display: block; padding: var(--spacing-lg);">
+        <?php
+        // Préparer les données pour le tableau
+        $stocksData = [];
+        while ($row = $stocks->fetch(PDO::FETCH_ASSOC)) {
+            $stocksData[] = [
+                'id' => $row['id'],
+                'nom_article' => $row['nom_article'],
+                'categorie' => $row['categorie'],
+                'quantite' => $row['quantite'],
+                'seuil' => $row['seuil'],
+                'created_at' => $row['created_at'],
+                'low_stock' => $row['quantite'] <= $row['seuil']
+            ];
+        }
+        
+        $stocksTableConfig = [
+            'title' => 'Liste des Articles',
+            'subtitle' => 'Gestion complète du stock',
+            'id' => 'stocksTable',
+            'search' => false, // Désactivé car on a notre propre recherche
+            'export' => true,
+            'columns' => [
+                ['key' => 'id', 'label' => 'ID', 'sortable' => true, 'type' => 'text'],
+                ['key' => 'nom_article', 'label' => 'Nom de l\'article', 'sortable' => true, 'type' => 'text'],
+                ['key' => 'categorie', 'label' => 'Catégorie', 'sortable' => true, 'type' => 'text'],
+                ['key' => 'quantite', 'label' => 'Quantité', 'sortable' => true, 'type' => 'number', 'class' => 'text-center'],
+                ['key' => 'seuil', 'label' => 'Seuil', 'sortable' => true, 'type' => 'number', 'class' => 'text-center'],
+                ['key' => 'created_at', 'label' => 'Date d\'ajout', 'sortable' => true, 'type' => 'datetime']
+            ],
+            'actions' => [
+                [
+                    'icon' => 'fas fa-edit',
+                    'class' => 'btn-warning',
+                    'title' => 'Modifier',
+                    'url' => 'javascript:openEditModal({id})'
+                ],
+                [
+                    'icon' => 'fas fa-trash',
+                    'class' => 'btn-danger',
+                    'title' => 'Supprimer',
+                    'url' => 'javascript:confirmDelete({id}, \'{nom_article}\')'
+                ]
+            ],
+            'data' => $stocksData
+        ];
+        
+        renderDataTable($stocksTableConfig);
+        ?>
+    </div>
+
+    <!-- Onglet Historique -->
+    <div id="history-tab" class="tab-content" style="display: none; padding: var(--spacing-lg);">
+        <?php
+        // Préparer les données pour l'historique
+        $historyData = [];
+        while ($movement = $movements->fetch(PDO::FETCH_ASSOC)) {
+            $historyData[] = [
+                'date_mouvement' => $movement['date_mouvement'],
+                'action' => $movement['action'],
+                'nom_article' => $movement['nom_article'] ?? 'Article supprimé',
+                'details' => $movement['details'],
+                'utilisateur' => $movement['utilisateur']
+            ];
+        }
+        
+        $historyTableConfig = [
+            'title' => 'Historique des Mouvements',
+            'subtitle' => 'Suivi de toutes les actions effectuées',
+            'id' => 'historyTable',
+            'search' => true,
+            'export' => true,
+            'columns' => [
+                ['key' => 'date_mouvement', 'label' => 'Date', 'sortable' => true, 'type' => 'datetime'],
+                ['key' => 'action', 'label' => 'Action', 'sortable' => true, 'type' => 'badge', 'badgeClass' => [
+                    'ajout' => 'success',
+                    'modification' => 'warning',
+                    'suppression' => 'danger'
+                ]],
+                ['key' => 'nom_article', 'label' => 'Article', 'sortable' => true, 'type' => 'text'],
+                ['key' => 'details', 'label' => 'Détails', 'sortable' => false, 'type' => 'text'],
+                ['key' => 'utilisateur', 'label' => 'Utilisateur', 'sortable' => true, 'type' => 'text']
+            ],
+            'data' => $historyData
+        ];
+        
+        renderDataTable($historyTableConfig);
+        ?>
+    </div>
+</div>
+
+<!-- Modal pour ajouter/modifier un article -->
+<div id="stockModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title" id="modalTitle">
+                <i class="fas fa-plus-circle"></i> Ajouter un article
+            </h3>
+            <button class="modal-close" onclick="closeModal('stockModal')">&times;</button>
+        </div>
+        <form id="stockForm" method="POST">
+            <div class="modal-body">
                 <input type="hidden" id="stockId" name="id">
                 <input type="hidden" id="formAction" name="action" value="add">
                 
                 <div class="form-group">
-                    <label for="nom_article">Nom de l'article *</label>
-                    <input type="text" id="nom_article" name="nom_article" required>
+                    <label class="form-label" for="nom_article">Nom de l'article</label>
+                    <input type="text" id="nom_article" name="nom_article" class="form-control" required>
                 </div>
                 
                 <div class="form-group">
-                    <label for="categorie">Catégorie *</label>
-                    <input type="text" id="categorie" name="categorie" required>
+                    <label class="form-label" for="categorie">Catégorie</label>
+                    <input type="text" id="categorie" name="categorie" class="form-control" required>
                 </div>
                 
-                <div class="form-row">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-lg);">
                     <div class="form-group">
-                        <label for="quantite">Quantité *</label>
-                        <input type="number" id="quantite" name="quantite" min="0" required>
+                        <label class="form-label" for="quantite">Quantité</label>
+                        <input type="number" id="quantite" name="quantite" class="form-control" min="0" required>
                     </div>
                     
                     <div class="form-group">
-                        <label for="seuil">Seuil d'alerte *</label>
-                        <input type="number" id="seuil" name="seuil" min="1" required>
+                        <label class="form-label" for="seuil">Seuil d'alerte</label>
+                        <input type="number" id="seuil" name="seuil" class="form-control" min="1" required>
                     </div>
                 </div>
-                
-                <div class="form-actions">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Annuler</button>
-                    <button type="submit" class="btn btn-primary" id="submitBtn">Ajouter</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Modal de confirmation de suppression -->
-    <div id="deleteModal" class="modal">
-        <div class="modal-content modal-small">
-            <div class="modal-header">
-                <h2><i class="fas fa-exclamation-triangle"></i> Confirmer la suppression</h2>
-                <span class="close" onclick="closeDeleteModal()">&times;</span>
             </div>
-            <div class="modal-body">
-                <p>Êtes-vous sûr de vouloir supprimer l'article "<span id="deleteItemName"></span>" ?</p>
-                <p class="warning">Cette action est irréversible.</p>
-            </div>
+            
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">Annuler</button>
-                <button type="button" class="btn btn-danger" onclick="executeDelete()">Supprimer</button>
+                <button type="button" class="btn btn-ghost" onclick="closeModal('stockModal')">Annuler</button>
+                <button type="submit" class="btn btn-primary" id="submitBtn">
+                    <i class="fas fa-save"></i> Ajouter
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal de confirmation de suppression -->
+<div id="deleteModal" class="modal">
+    <div class="modal-content" style="max-width: 400px;">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <i class="fas fa-exclamation-triangle" style="color: var(--warning-color);"></i> 
+                Confirmer la suppression
+            </h3>
+            <button class="modal-close" onclick="closeModal('deleteModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p>Êtes-vous sûr de vouloir supprimer l'article "<strong id="deleteItemName"></strong>" ?</p>
+            <div class="alert alert-warning" style="margin-top: var(--spacing-md);">
+                <i class="alert-icon fas fa-exclamation-triangle"></i>
+                <div>Cette action est irréversible.</div>
             </div>
         </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-ghost" onclick="closeModal('deleteModal')">Annuler</button>
+            <button type="button" class="btn btn-danger" onclick="executeDelete()">
+                <i class="fas fa-trash"></i> Supprimer
+            </button>
+        </div>
     </div>
+</div>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="assets/js/stocks.js"></script>
     <script>
-        // Variables globales
-        let deleteId = null;
-        
-        // Calcul et affichage des métriques
-        function updateMetrics() {
-            const tableRows = document.querySelectorAll('#stocksTable tbody tr');
-            const totalArticles = tableRows.length;
-            let lowStockCount = 0;
-            const categories = new Set();
-            
-            tableRows.forEach(row => {
-                if (row.classList.contains('low-stock')) {
-                    lowStockCount++;
-                }
-                // Extraire la catégorie de la 3ème colonne
-                const categoryCell = row.cells[2];
-                if (categoryCell) {
-                    categories.add(categoryCell.textContent.trim());
-                }
-            });
-            
-            // Mettre à jour les métriques du dashboard
-            document.getElementById('totalArticlesMetric').textContent = totalArticles;
-            document.getElementById('lowStockMetric').textContent = lowStockCount;
-            document.getElementById('categoriesMetric').textContent = categories.size;
-            
-            // Mettre à jour les statistiques du hero
-            document.getElementById('totalArticles').textContent = totalArticles;
-            document.getElementById('lowStockCount').textContent = lowStockCount;
-            
-            // Animation des nombres
-            animateNumbers();
-        }
-        
-        // Animation des nombres
-        function animateNumbers() {
-            const numbers = document.querySelectorAll('.metric-value, .stat-number');
-            numbers.forEach(element => {
-                const finalValue = parseInt(element.textContent);
-                let currentValue = 0;
-                const increment = Math.ceil(finalValue / 20);
-                
-                const timer = setInterval(() => {
-                    currentValue += increment;
-                    if (currentValue >= finalValue) {
-                        currentValue = finalValue;
-                        clearInterval(timer);
-                    }
-                    element.textContent = currentValue;
-                }, 50);
-            });
-        }
-        
-        // Calculer les mouvements (simulation)
-        function updateMovementsMetric() {
-            fetch('?ajax=count_movements')
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('movementsMetric').textContent = data.count || 0;
-                    document.getElementById('totalMovements').textContent = data.count || 0;
-                })
-                .catch(() => {
-                    // Fallback avec une valeur simulée
-                    const simulatedCount = Math.floor(Math.random() * 50) + 10;
-                    document.getElementById('movementsMetric').textContent = simulatedCount;
-                    document.getElementById('totalMovements').textContent = simulatedCount;
-                });
-        }
-
-        // Gestion des onglets
-        function showTab(tabName) {
-            // Masquer tous les onglets
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            
-            // Désactiver tous les boutons d'onglet
-            document.querySelectorAll('.tab-button').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            
-            // Afficher l'onglet sélectionné
-            document.getElementById(tabName + '-tab').classList.add('active');
-            
-            // Activer le bouton correspondant
+        // Initialisation au chargement de la page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Les fonctions sont maintenant gérées par stocks.js
+        });correspondant
             event.target.classList.add('active');
         }
 
@@ -859,12 +747,168 @@ $movements = $stockManager->getMovements(20);
             setTimeout(function() {
                 const alerts = document.querySelectorAll('.alert');
                 alerts.forEach(alert => {
-                    alert.style.opacity = '0';
-                    alert.style.transform = 'translateY(-20px)';
-                    setTimeout(() => alert.remove(), 300);
-                });
-            }, 5000);
+<!-- JavaScript spécifique à la page -->
+<script>
+// Variables globales pour la compatibilité
+let deleteId = null;
+
+function pageInit() {
+    updateMetrics();
+    updateMovementsMetric();
+    
+    // Événements de recherche
+    const searchInput = document.getElementById('searchInput');
+    const categoryFilter = document.getElementById('categoryFilter');
+    const lowStockFilter = document.getElementById('lowStockFilter');
+    
+    if (searchInput) {
+        searchInput.addEventListener('input', performSearch);
+    }
+    if (categoryFilter) {
+        categoryFilter.addEventListener('change', performSearch);
+    }
+    if (lowStockFilter) {
+        lowStockFilter.addEventListener('change', performSearch);
+    }
+}
+
+function updateMetrics() {
+    const tableRows = document.querySelectorAll('#stocksTable tbody tr');
+    const totalArticles = tableRows.length;
+    let lowStockCount = 0;
+    const categories = new Set();
+    
+    tableRows.forEach(row => {
+        const cells = row.cells;
+        if (cells.length > 3) {
+            const quantity = parseInt(cells[3].textContent) || 0;
+            const threshold = parseInt(cells[4].textContent) || 0;
+            
+            if (quantity <= threshold) {
+                lowStockCount++;
+            }
+            
+            categories.add(cells[2].textContent.trim());
+        }
+    });
+    
+    // Mettre à jour les statistiques (si les éléments existent)
+    const stats = document.querySelectorAll('.stat-card .stat-value');
+    if (stats.length >= 3) {
+        stats[0].textContent = totalArticles;
+        stats[1].textContent = lowStockCount;
+        stats[2].textContent = categories.size;
+    }
+}
+
+function updateMovementsMetric() {
+    fetch('?ajax=count_movements')
+        .then(response => response.json())
+        .then(data => {
+            const stats = document.querySelectorAll('.stat-card .stat-value');
+            if (stats.length >= 4) {
+                stats[3].textContent = data.count || 0;
+            }
+        })
+        .catch(() => {
+            const simulatedCount = Math.floor(Math.random() * 50) + 10;
+            const stats = document.querySelectorAll('.stat-card .stat-value');
+            if (stats.length >= 4) {
+                stats[3].textContent = simulatedCount;
+            }
         });
-    </script>
-</body>
-</html>
+}
+
+function showTab(tabName) {
+    // Masquer tous les onglets
+    document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.style.display = 'none';
+    });
+    
+    // Réinitialiser les styles des boutons
+    document.querySelectorAll('#stocksTab, #historyTab').forEach(btn => {
+        btn.style.borderBottomColor = 'transparent';
+    });
+    
+    // Afficher l'onglet sélectionné
+    const targetTab = document.getElementById(tabName + '-tab');
+    if (targetTab) {
+        targetTab.style.display = 'block';
+    }
+    
+    // Activer le bouton correspondant
+    const activeButton = document.getElementById(tabName + 'Tab');
+    if (activeButton) {
+        activeButton.style.borderBottomColor = 'var(--primary-color)';
+    }
+}
+
+function performSearch() {
+    const search = document.getElementById('searchInput').value;
+    const category = document.getElementById('categoryFilter').value;
+    const lowStock = document.getElementById('lowStockFilter').checked;
+    
+    const params = new URLSearchParams();
+    if (search) params.append('search', search);
+    if (category) params.append('category', category);
+    if (lowStock) params.append('low_stock', '1');
+    
+    window.location.search = params.toString();
+}
+
+function openAddModal() {
+    document.getElementById('modalTitle').innerHTML = '<i class="fas fa-plus-circle"></i> Ajouter un article';
+    document.getElementById('formAction').value = 'add';
+    document.getElementById('submitBtn').innerHTML = '<i class="fas fa-save"></i> Ajouter';
+    document.getElementById('stockForm').reset();
+    openModal('stockModal');
+}
+
+function openEditModal(id) {
+    fetch(`?ajax=get_stock&id=${id}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data) {
+                document.getElementById('modalTitle').innerHTML = '<i class="fas fa-edit"></i> Modifier un article';
+                document.getElementById('formAction').value = 'update';
+                document.getElementById('stockId').value = data.id;
+                document.getElementById('nom_article').value = data.nom_article;
+                document.getElementById('categorie').value = data.categorie;
+                document.getElementById('quantite').value = data.quantite;
+                document.getElementById('seuil').value = data.seuil;
+                document.getElementById('submitBtn').innerHTML = '<i class="fas fa-save"></i> Modifier';
+                openModal('stockModal');
+            }
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            showNotification('Erreur lors du chargement des données', 'error');
+        });
+}
+
+function confirmDelete(id, name) {
+    document.getElementById('deleteItemName').textContent = name;
+    deleteId = id;
+    openModal('deleteModal');
+}
+
+function executeDelete() {
+    if (deleteId) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.innerHTML = `
+            <input type="hidden" name="action" value="delete">
+            <input type="hidden" name="id" value="${deleteId}">
+        `;
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
+
+<?php
+$content = ob_get_clean();
+
+// Inclure le layout de base
+include __DIR__ . '/layout/base.php';
+?>

@@ -1,7 +1,7 @@
 <?php
 /**
  * SCOLARIA - Dashboard Moderne
- * Exemple d'utilisation du nouveau design system
+ * Utilisation du nouveau design system avec sidebar
  */
 
 declare(strict_types=1);
@@ -72,12 +72,8 @@ if (isset($_GET['action']) && $_GET['action'] === 'expenses_json') {
 // Configuration de la page
 $currentPage = 'dashboard';
 $pageTitle = 'Tableau de bord';
-
-// Breadcrumb
-$breadcrumb = [
-    ['title' => 'Accueil', 'url' => '/dashboard.php'],
-    ['title' => 'Tableau de bord', 'url' => '']
-];
+$additionalCSS = [];
+$additionalJS = [];
 
 // Capacités role
 $canManageStocks = in_array($role, ['admin', 'gestionnaire'], true);
@@ -279,236 +275,133 @@ ob_start();
 <!-- Cartes de statistiques -->
 <?php renderStatsGrid($dashboardStats); ?>
 
-<!-- Graphiques et tableaux -->
-<div class="dashboard-content">
-    <div class="row">
-        <!-- Graphique des dépenses -->
-        <div class="col-lg-8">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Évolution des dépenses</h3>
-                    <p class="card-subtitle">Dépenses mensuelles sur les 5 derniers mois</p>
-                </div>
-                <div class="card-body">
-                    <canvas id="expensesChart" height="300"></canvas>
-                </div>
+<!-- Graphiques -->
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: var(--spacing-xl); margin-bottom: var(--spacing-xl);">
+    <!-- Graphique des dépenses -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Évolution des dépenses</h3>
+            <p class="card-subtitle">Dépenses mensuelles sur les 5 derniers mois</p>
+        </div>
+        <div class="card-body">
+            <canvas id="expensesChart" height="300"></canvas>
+        </div>
+    </div>
+    
+    <!-- Répartition des stocks -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Répartition des stocks</h3>
+            <p class="card-subtitle">Par catégorie d'articles</p>
+        </div>
+        <div class="card-body">
+            <canvas id="stockChart" height="300"></canvas>
+        </div>
+    </div>
+</div>
+<!-- Alertes importantes -->
+<div class="card" style="margin-bottom: var(--spacing-xl);">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fas fa-exclamation-triangle" style="color: var(--warning-color);"></i>
+            Alertes importantes
+        </h3>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-warning">
+            <i class="alert-icon fas fa-exclamation-triangle"></i>
+            <div>
+                <strong>Stock faible :</strong> Cahiers A4 (Quantité : 12)
+                <br><small>Seuil d'alerte : 20 unités</small>
             </div>
+            <a href="stocks.php" class="btn btn-sm btn-warning">Réapprovisionner</a>
         </div>
         
-        <!-- Répartition des stocks -->
-        <div class="col-lg-4">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Répartition des stocks</h3>
-                    <p class="card-subtitle">Par catégorie d'articles</p>
-                </div>
-                <div class="card-body">
-                    <canvas id="stockChart" height="300"></canvas>
-                </div>
+        <div class="alert alert-danger">
+            <i class="alert-icon fas fa-times-circle"></i>
+            <div>
+                <strong>Rupture de stock :</strong> Stylos rouges
+                <br><small>Dernière sortie : il y a 2 jours</small>
             </div>
+            <a href="alerts.php" class="btn btn-sm btn-primary">Commande urgente</a>
+        </div>
+        
+        <div class="alert alert-info">
+            <i class="alert-icon fas fa-info-circle"></i>
+            <div>
+                <strong>Commande en attente :</strong> Papier A3 (100 unités)
+                <br><small>Livraison prévue : 18/01/2024</small>
+            </div>
+            <a href="alerts.php" class="btn btn-sm btn-outline">Suivre</a>
         </div>
     </div>
-    
-    <!-- Alertes importantes -->
-    <div class="row mt-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-exclamation-triangle text-warning"></i>
-                        Alertes importantes
-                    </h3>
-                </div>
-                <div class="card-body">
-                    <div class="alerts-list">
-                        <div class="alert alert-warning">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            <div>
-                                <strong>Stock faible :</strong> Cahiers A4 (Quantité : 12)
-                                <br><small>Seuil d'alerte : 20 unités</small>
-                            </div>
-                            <a href="/stocks/reorder/34" class="btn btn-sm btn-warning">Réapprovisionner</a>
-                        </div>
-                        
-                        <div class="alert alert-error">
-                            <i class="fas fa-times-circle"></i>
-                            <div>
-                                <strong>Rupture de stock :</strong> Stylos rouges
-                                <br><small>Dernière sortie : il y a 2 jours</small>
-                            </div>
-                            <a href="/stocks/emergency-order/56" class="btn btn-sm btn-primary">Commande urgente</a>
-                        </div>
-                        
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle"></i>
-                            <div>
-                                <strong>Commande en attente :</strong> Papier A3 (100 unités)
-                                <br><small>Livraison prévue : 18/01/2024</small>
-                            </div>
-                            <a href="/orders/track/78" class="btn btn-sm btn-outline">Suivre</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+</div>
+<!-- Tableau des activités récentes -->
+<?php renderDataTable($tableConfig); ?>
+
+<!-- Actions rapides -->
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Actions rapides</h3>
+        <p class="card-subtitle">Raccourcis vers les fonctions principales</p>
     </div>
-    
-    <!-- Tableau des activités récentes -->
-    <div class="row mt-4">
-        <div class="col-12">
-            <?php renderDataTable($tableConfig); ?>
-        </div>
-    </div>
-    
-    <!-- Actions rapides -->
-    <div class="row mt-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Actions rapides</h3>
-                    <p class="card-subtitle">Raccourcis vers les fonctions principales</p>
+    <div class="card-body">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: var(--spacing-lg);">
+            <a href="stocks.php" class="card" style="text-decoration: none; color: inherit; padding: var(--spacing-lg); display: flex; align-items: center; gap: var(--spacing-md);">
+                <div style="width: 50px; height: 50px; background: var(--primary-color); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; color: white; font-size: var(--font-size-lg);">
+                    <i class="fas fa-plus"></i>
                 </div>
-                <div class="card-body">
-                    <div class="quick-actions">
-                        <a href="/stocks/add" class="quick-action">
-                            <div class="quick-action-icon bg-primary">
-                                <i class="fas fa-plus"></i>
-                            </div>
-                            <div class="quick-action-content">
-                                <h4>Ajouter un article</h4>
-                                <p>Ajouter un nouvel article au stock</p>
-                            </div>
-                        </a>
-                        
-                        <a href="/orders/create" class="quick-action">
-                            <div class="quick-action-icon bg-success">
-                                <i class="fas fa-shopping-cart"></i>
-                            </div>
-                            <div class="quick-action-content">
-                                <h4>Nouvelle commande</h4>
-                                <p>Créer une commande fournisseur</p>
-                            </div>
-                        </a>
-                        
-                        <a href="/inventory/start" class="quick-action">
-                            <div class="quick-action-icon bg-warning">
-                                <i class="fas fa-clipboard-list"></i>
-                            </div>
-                            <div class="quick-action-content">
-                                <h4>Inventaire</h4>
-                                <p>Lancer un inventaire</p>
-                            </div>
-                        </a>
-                        
-                        <a href="/reports/generate" class="quick-action">
-                            <div class="quick-action-icon bg-info">
-                                <i class="fas fa-chart-bar"></i>
-                            </div>
-                            <div class="quick-action-content">
-                                <h4>Générer un rapport</h4>
-                                <p>Créer un rapport personnalisé</p>
-                            </div>
-                        </a>
-                    </div>
+                <div>
+                    <h4 style="margin: 0 0 var(--spacing-xs) 0; font-size: var(--font-size-lg);">Ajouter un article</h4>
+                    <p style="margin: 0; color: var(--text-muted); font-size: var(--font-size-sm);">Ajouter un nouvel article au stock</p>
                 </div>
-            </div>
+            </a>
+            
+            <a href="alerts.php" class="card" style="text-decoration: none; color: inherit; padding: var(--spacing-lg); display: flex; align-items: center; gap: var(--spacing-md);">
+                <div style="width: 50px; height: 50px; background: var(--secondary-color); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; color: white; font-size: var(--font-size-lg);">
+                    <i class="fas fa-shopping-cart"></i>
+                </div>
+                <div>
+                    <h4 style="margin: 0 0 var(--spacing-xs) 0; font-size: var(--font-size-lg);">Nouvelle commande</h4>
+                    <p style="margin: 0; color: var(--text-muted); font-size: var(--font-size-sm);">Créer une commande fournisseur</p>
+                </div>
+            </a>
+            
+            <a href="stocks.php" class="card" style="text-decoration: none; color: inherit; padding: var(--spacing-lg); display: flex; align-items: center; gap: var(--spacing-md);">
+                <div style="width: 50px; height: 50px; background: var(--warning-color); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; color: white; font-size: var(--font-size-lg);">
+                    <i class="fas fa-clipboard-list"></i>
+                </div>
+                <div>
+                    <h4 style="margin: 0 0 var(--spacing-xs) 0; font-size: var(--font-size-lg);">Inventaire</h4>
+                    <p style="margin: 0; color: var(--text-muted); font-size: var(--font-size-sm);">Lancer un inventaire</p>
+                </div>
+            </a>
+            
+            <a href="dashboard.php" class="card" style="text-decoration: none; color: inherit; padding: var(--spacing-lg); display: flex; align-items: center; gap: var(--spacing-md);">
+                <div style="width: 50px; height: 50px; background: var(--info-color); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; color: white; font-size: var(--font-size-lg);">
+                    <i class="fas fa-chart-bar"></i>
+                </div>
+                <div>
+                    <h4 style="margin: 0 0 var(--spacing-xs) 0; font-size: var(--font-size-lg);">Générer un rapport</h4>
+                    <p style="margin: 0; color: var(--text-muted); font-size: var(--font-size-sm);">Créer un rapport personnalisé</p>
+                </div>
+            </a>
         </div>
     </div>
 </div>
 
-<!-- Styles spécifiques au dashboard -->
+<!-- Responsive pour les graphiques -->
 <style>
-.row {
-    display: flex;
-    flex-wrap: wrap;
-    margin: 0 -0.75rem;
+@media (max-width: 768px) {
+    div[style*="grid-template-columns: 2fr 1fr"] {
+        grid-template-columns: 1fr !important;
+    }
 }
-
-.col-12 { flex: 0 0 100%; padding: 0 0.75rem; }
-.col-lg-8 { flex: 0 0 66.666667%; padding: 0 0.75rem; }
-.col-lg-4 { flex: 0 0 33.333333%; padding: 0 0.75rem; }
-
-@media (max-width: 992px) {
-    .col-lg-8, .col-lg-4 { flex: 0 0 100%; }
-}
-
-.alerts-list {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
-
-.alerts-list .alert {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    margin-bottom: 0;
-}
-
-.alerts-list .alert > i {
-    font-size: 1.5rem;
-    flex-shrink: 0;
-}
-
-.alerts-list .alert > div {
-    flex: 1;
-}
-
-.quick-actions {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 1.5rem;
-}
-
-.quick-action {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 1.5rem;
-    border: 1px solid var(--border-light);
-    border-radius: var(--border-radius);
-    text-decoration: none;
-    color: inherit;
-    transition: all var(--transition-fast);
-}
-
-.quick-action:hover {
-    border-color: var(--primary-color);
-    box-shadow: var(--shadow-md);
-    transform: translateY(-2px);
-}
-
-.quick-action-icon {
-    width: 60px;
-    height: 60px;
-    border-radius: var(--border-radius);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    color: var(--text-white);
-    flex-shrink: 0;
-}
-
-.quick-action-content h4 {
-    font-size: 1.1rem;
-    font-weight: 600;
-    margin-bottom: 0.25rem;
-    color: var(--text-primary);
-}
-
-.quick-action-content p {
-    font-size: 0.9rem;
-    color: var(--text-muted);
-    margin: 0;
-}
-
-.mt-4 { margin-top: 1.5rem; }
 </style>
 
 <!-- JavaScript pour les graphiques -->
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+function pageInit() {
     // Configuration globale pour Chart.js
     Chart.defaults.font.family = 'Poppins';
     Chart.defaults.color = getComputedStyle(document.documentElement).getPropertyValue('--text-secondary');
@@ -593,23 +486,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-    // Charger via endpoint JSON sécurisé si disponible
-    const expensesCanvas = document.getElementById('expensesChart');
-    if (expensesCanvas) {
-        fetch('<?= BASE_URL ?>dashboard.php?action=expenses_json')
-            .then(r => r.json())
-            .then(payload => {
-                if (!payload || !Array.isArray(payload.labels)) return;
-                const chart = Chart.getChart(expensesCanvas);
-                if (chart) {
-                    chart.data.labels = payload.labels;
-                    chart.data.datasets[0].data = payload.data;
-                    chart.update();
-                }
-            })
-            .catch(() => {});
-    }
-});
+}
 </script>
 
 <?php

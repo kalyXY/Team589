@@ -1,439 +1,413 @@
 <?php
 /**
- * SCOLARIA - Composant Tableau de Données
- * Tableau réutilisable avec tri, pagination et actions
+ * Composant Tableau de Données
+ * Composant réutilisable pour afficher des tableaux avec fonctionnalités avancées
+ * Team589
  */
 
 /**
- * Affiche un tableau de données moderne
- * 
+ * Rend un tableau de données complet
  * @param array $config Configuration du tableau
  */
 function renderDataTable($config) {
-    $title = $config['title'] ?? '';
-    $subtitle = $config['subtitle'] ?? '';
-    $columns = $config['columns'] ?? [];
+    $title = htmlspecialchars($config['title'] ?? '');
+    $subtitle = htmlspecialchars($config['subtitle'] ?? '');
+    $id = htmlspecialchars($config['id'] ?? 'dataTable');
     $data = $config['data'] ?? [];
+    $columns = $config['columns'] ?? [];
     $actions = $config['actions'] ?? [];
-    $pagination = $config['pagination'] ?? false;
     $search = $config['search'] ?? false;
     $export = $config['export'] ?? false;
-    $tableId = $config['id'] ?? 'dataTable';
+    $pagination = $config['pagination'] ?? false;
+    $itemsPerPage = $config['itemsPerPage'] ?? 10;
     
-    ?>
-    <div class="table-container">
-        <?php if ($title || $subtitle || $search || $export): ?>
-            <div class="table-header">
-                <div class="table-title-section">
-                    <?php if ($title): ?>
-                        <h3 class="table-title"><?= htmlspecialchars($title) ?></h3>
-                    <?php endif; ?>
-                    <?php if ($subtitle): ?>
-                        <p class="table-subtitle"><?= htmlspecialchars($subtitle) ?></p>
-                    <?php endif; ?>
-                </div>
-                
-                <div class="table-controls">
-                    <?php if ($search): ?>
-                        <div class="table-search">
-                            <div class="form-group">
-                                <input type="text" 
-                                       class="form-control" 
-                                       placeholder="Rechercher..." 
-                                       id="<?= $tableId ?>Search">
-                                <i class="fas fa-search"></i>
-                            </div>
-                        </div>
-                    <?php endif; ?>
-                    
-                    <?php if ($export): ?>
-                        <div class="table-export">
-                            <button class="btn btn-outline btn-sm" onclick="exportTable('<?= $tableId ?>')">
-                                <i class="fas fa-download"></i>
-                                Exporter
-                            </button>
-                        </div>
-                    <?php endif; ?>
-                </div>
-            </div>
-        <?php endif; ?>
+    echo '<div class="table-container" id="' . $id . 'Container">';
+    
+    // Header du tableau
+    if ($title || $search || $export) {
+        echo '<div class="card-header">';
+        if ($title) {
+            echo '<div>';
+            echo '<h3 class="card-title">' . $title . '</h3>';
+            if ($subtitle) {
+                echo '<p class="card-subtitle">' . $subtitle . '</p>';
+            }
+            echo '</div>';
+        }
         
-        <div class="table-wrapper">
-            <table class="table" id="<?= $tableId ?>">
-                <thead>
-                    <tr>
-                        <?php foreach ($columns as $column): ?>
-                            <th class="<?= $column['sortable'] ?? false ? 'sortable' : '' ?>"
-                                <?= isset($column['width']) ? 'style="width: ' . $column['width'] . '"' : '' ?>
-                                data-column="<?= $column['key'] ?? '' ?>">
-                                <?= htmlspecialchars($column['label'] ?? '') ?>
-                                <?php if ($column['sortable'] ?? false): ?>
-                                    <i class="fas fa-sort sort-icon"></i>
-                                <?php endif; ?>
-                            </th>
-                        <?php endforeach; ?>
-                        <?php if (!empty($actions)): ?>
-                            <th class="actions-column">Actions</th>
-                        <?php endif; ?>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (empty($data)): ?>
-                        <tr>
-                            <td colspan="<?= count($columns) + (!empty($actions) ? 1 : 0) ?>" class="text-center">
-                                <div class="empty-state">
-                                    <i class="fas fa-inbox"></i>
-                                    <p>Aucune donnée disponible</p>
-                                </div>
-                            </td>
-                        </tr>
-                    <?php else: ?>
-                        <?php foreach ($data as $row): ?>
-                            <tr>
-                                <?php foreach ($columns as $column): ?>
-                                    <td class="<?= $column['class'] ?? '' ?>">
-                                        <?php 
-                                        $value = $row[$column['key']] ?? '';
-                                        
-                                        // Formatage selon le type
-                                        switch ($column['type'] ?? 'text') {
-                                            case 'currency':
-                                                echo '€' . number_format($value, 2, ',', ' ');
-                                                break;
-                                            case 'date':
-                                                echo $value ? date('d/m/Y', strtotime($value)) : '';
-                                                break;
-                                            case 'datetime':
-                                                echo $value ? date('d/m/Y H:i', strtotime($value)) : '';
-                                                break;
-                                            case 'badge':
-                                                $badgeClass = $column['badgeClass'][$value] ?? 'primary';
-                                                echo '<span class="badge badge-' . $badgeClass . '">' . htmlspecialchars($value) . '</span>';
-                                                break;
-                                            case 'boolean':
-                                                $icon = $value ? 'check-circle text-success' : 'times-circle text-error';
-                                                echo '<i class="fas fa-' . $icon . '"></i>';
-                                                break;
-                                            case 'progress':
-                                                echo '<div class="progress-bar">
-                                                        <div class="progress-fill" style="width: ' . $value . '%"></div>
-                                                        <span class="progress-text">' . $value . '%</span>
-                                                      </div>';
-                                                break;
-                                            case 'image':
-                                                if ($value) {
-                                                    echo '<img src="' . htmlspecialchars($value) . '" alt="" class="table-image">';
-                                                }
-                                                break;
-                                            case 'link':
-                                                if ($value && isset($column['linkUrl'])) {
-                                                    $url = str_replace('{id}', $row['id'] ?? '', $column['linkUrl']);
-                                                    echo '<a href="' . $url . '" class="table-link">' . htmlspecialchars($value) . '</a>';
-                                                } else {
-                                                    echo htmlspecialchars($value);
-                                                }
-                                                break;
-                                            default:
-                                                echo htmlspecialchars($value);
-                                        }
-                                        ?>
-                                    </td>
-                                <?php endforeach; ?>
-                                
-                                <?php if (!empty($actions)): ?>
-                                    <td class="actions-column">
-                                        <div class="table-actions">
-                                            <?php foreach ($actions as $action): ?>
-                                                <?php
-                                                $url = str_replace('{id}', $row['id'] ?? '', $action['url'] ?? '#');
-                                                $class = 'btn-action ' . ($action['class'] ?? '');
-                                                $onclick = $action['onclick'] ?? '';
-                                                if ($onclick) {
-                                                    $onclick = str_replace('{id}', $row['id'] ?? '', $onclick);
-                                                    $onclick = 'onclick="' . $onclick . '"';
-                                                }
-                                                ?>
-                                                <a href="<?= $url ?>" 
-                                                   class="<?= $class ?>" 
-                                                   <?= $onclick ?>
-                                                   title="<?= htmlspecialchars($action['title'] ?? '') ?>">
-                                                    <i class="<?= $action['icon'] ?? 'fas fa-edit' ?>"></i>
-                                                </a>
-                                            <?php endforeach; ?>
-                                        </div>
-                                    </td>
-                                <?php endif; ?>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
+        if ($search || $export) {
+            echo '<div class="table-controls" style="display: flex; gap: var(--spacing-md); align-items: center;">';
+            
+            if ($search) {
+                echo '<div class="table-search" style="position: relative;">';
+                echo '<input type="text" id="' . $id . 'Search" placeholder="Rechercher..." ';
+                echo 'style="padding: var(--spacing-sm) var(--spacing-md) var(--spacing-sm) 2.5rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); font-size: var(--font-size-sm);">';
+                echo '<i class="fas fa-search" style="position: absolute; left: var(--spacing-sm); top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>';
+                echo '</div>';
+            }
+            
+            if ($export) {
+                echo '<div class="table-export">';
+                echo '<button class="btn btn-outline btn-sm" onclick="exportTable(\'' . $id . '\')">';
+                echo '<i class="fas fa-download"></i> Exporter';
+                echo '</button>';
+                echo '</div>';
+            }
+            
+            echo '</div>';
+        }
+        echo '</div>';
+    }
+    
+    // Tableau
+    echo '<div class="table-responsive">';
+    echo '<table class="table" id="' . $id . '">';
+    
+    // En-têtes
+    echo '<thead>';
+    echo '<tr>';
+    foreach ($columns as $column) {
+        $label = htmlspecialchars($column['label'] ?? '');
+        $sortable = $column['sortable'] ?? false;
+        $class = htmlspecialchars($column['class'] ?? '');
         
-        <?php if ($pagination): ?>
-            <div class="table-pagination">
-                <div class="pagination-info">
-                    Affichage de <?= $pagination['start'] ?? 1 ?> à <?= $pagination['end'] ?? count($data) ?> 
-                    sur <?= $pagination['total'] ?? count($data) ?> résultats
-                </div>
+        echo '<th class="' . $class . '"';
+        if ($sortable) {
+            echo ' style="cursor: pointer;" onclick="sortTable(\'' . $id . '\', \'' . $column['key'] . '\')"';
+        }
+        echo '>';
+        echo $label;
+        if ($sortable) {
+            echo ' <i class="fas fa-sort sort-icon" style="opacity: 0.5; margin-left: var(--spacing-xs);"></i>';
+        }
+        echo '</th>';
+    }
+    
+    if (!empty($actions)) {
+        echo '<th class="text-center">Actions</th>';
+    }
+    
+    echo '</tr>';
+    echo '</thead>';
+    
+    // Corps du tableau
+    echo '<tbody>';
+    if (empty($data)) {
+        $colspan = count($columns) + (empty($actions) ? 0 : 1);
+        echo '<tr><td colspan="' . $colspan . '" class="text-center" style="padding: var(--spacing-xl); color: var(--text-muted);">';
+        echo '<i class="fas fa-inbox" style="font-size: var(--font-size-2xl); margin-bottom: var(--spacing-md);"></i><br>';
+        echo 'Aucune donnée disponible';
+        echo '</td></tr>';
+    } else {
+        foreach ($data as $index => $row) {
+            echo '<tr>';
+            foreach ($columns as $column) {
+                $key = $column['key'];
+                $type = $column['type'] ?? 'text';
+                $class = htmlspecialchars($column['class'] ?? '');
+                $value = $row[$key] ?? '';
                 
-                <div class="pagination-controls">
-                    <button class="btn btn-ghost btn-sm" 
-                            <?= ($pagination['current'] ?? 1) <= 1 ? 'disabled' : '' ?>
-                            onclick="changePage(<?= ($pagination['current'] ?? 1) - 1 ?>)">
-                        <i class="fas fa-chevron-left"></i>
-                        Précédent
-                    </button>
+                echo '<td class="' . $class . '">';
+                echo renderTableCell($value, $type, $column, $row);
+                echo '</td>';
+            }
+            
+            // Actions
+            if (!empty($actions)) {
+                echo '<td class="text-center">';
+                echo '<div class="table-actions" style="display: flex; gap: var(--spacing-xs); justify-content: center;">';
+                foreach ($actions as $action) {
+                    $icon = htmlspecialchars($action['icon'] ?? 'fas fa-eye');
+                    $class = htmlspecialchars($action['class'] ?? 'btn-outline');
+                    $title = htmlspecialchars($action['title'] ?? '');
+                    $url = $action['url'] ?? '#';
                     
-                    <div class="pagination-pages">
-                        <?php 
-                        $current = $pagination['current'] ?? 1;
-                        $total = $pagination['pages'] ?? 1;
-                        $start = max(1, $current - 2);
-                        $end = min($total, $current + 2);
-                        
-                        for ($i = $start; $i <= $end; $i++): ?>
-                            <button class="btn <?= $i === $current ? 'btn-primary' : 'btn-ghost' ?> btn-sm"
-                                    onclick="changePage(<?= $i ?>)">
-                                <?= $i ?>
-                            </button>
-                        <?php endfor; ?>
-                    </div>
+                    // Remplacer les placeholders dans l'URL
+                    $url = str_replace('{id}', $row['id'] ?? '', $url);
+                    foreach ($row as $k => $v) {
+                        $url = str_replace('{' . $k . '}', $v, $url);
+                    }
                     
-                    <button class="btn btn-ghost btn-sm"
-                            <?= ($pagination['current'] ?? 1) >= ($pagination['pages'] ?? 1) ? 'disabled' : '' ?>
-                            onclick="changePage(<?= ($pagination['current'] ?? 1) + 1 ?>)">
-                        Suivant
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
-                </div>
-            </div>
-        <?php endif; ?>
-    </div>
-    <?php
+                    echo '<a href="' . htmlspecialchars($url) . '" class="btn btn-sm ' . $class . '" title="' . $title . '">';
+                    echo '<i class="' . $icon . '"></i>';
+                    echo '</a>';
+                }
+                echo '</div>';
+                echo '</td>';
+            }
+            
+            echo '</tr>';
+        }
+    }
+    echo '</tbody>';
+    
+    echo '</table>';
+    echo '</div>';
+    
+    // Pagination
+    if ($pagination && !empty($data)) {
+        $totalItems = count($data);
+        $totalPages = ceil($totalItems / $itemsPerPage);
+        
+        if ($totalPages > 1) {
+            echo '<div class="table-pagination" style="padding: var(--spacing-lg); border-top: 1px solid var(--border-color); display: flex; justify-content: between; align-items: center;">';
+            echo '<div class="pagination-info" style="color: var(--text-muted); font-size: var(--font-size-sm);">';
+            echo 'Affichage de 1 à ' . min($itemsPerPage, $totalItems) . ' sur ' . $totalItems . ' éléments';
+            echo '</div>';
+            echo '<div class="pagination-controls" style="display: flex; gap: var(--spacing-xs);">';
+            
+            for ($i = 1; $i <= min(5, $totalPages); $i++) {
+                $active = $i === 1 ? 'btn-primary' : 'btn-outline';
+                echo '<button class="btn btn-sm ' . $active . '" onclick="goToPage(\'' . $id . '\', ' . $i . ')">' . $i . '</button>';
+            }
+            
+            if ($totalPages > 5) {
+                echo '<span style="padding: 0 var(--spacing-sm);">...</span>';
+                echo '<button class="btn btn-sm btn-outline" onclick="goToPage(\'' . $id . '\', ' . $totalPages . ')">' . $totalPages . '</button>';
+            }
+            
+            echo '</div>';
+            echo '</div>';
+        }
+    }
+    
+    echo '</div>';
+    
+    // JavaScript pour les fonctionnalités
+    echo '<script>';
+    echo 'document.addEventListener("DOMContentLoaded", function() {';
+    echo 'initDataTable("' . $id . '", ' . json_encode($config) . ');';
+    echo '});';
+    echo '</script>';
 }
 
 /**
- * Rendu d'un badge coloré
+ * Rend le contenu d'une cellule selon son type
+ * @param mixed $value Valeur à afficher
+ * @param string $type Type de cellule
+ * @param array $column Configuration de la colonne
+ * @param array $row Données de la ligne complète
+ * @return string HTML de la cellule
  */
-function renderBadge($text, $type = 'primary') {
-    $classes = [
-        'primary' => 'badge-primary',
-        'success' => 'badge-success',
-        'warning' => 'badge-warning',
-        'error' => 'badge-error',
-        'info' => 'badge-info'
-    ];
-    
-    $class = $classes[$type] ?? 'badge-primary';
-    echo '<span class="badge ' . $class . '">' . htmlspecialchars($text) . '</span>';
+function renderTableCell($value, $type, $column, $row) {
+    switch ($type) {
+        case 'text':
+            return htmlspecialchars($value);
+            
+        case 'number':
+            return number_format($value);
+            
+        case 'currency':
+            return number_format($value, 2) . ' €';
+            
+        case 'percentage':
+            return number_format($value, 1) . '%';
+            
+        case 'date':
+            return date('d/m/Y', strtotime($value));
+            
+        case 'datetime':
+            return date('d/m/Y H:i', strtotime($value));
+            
+        case 'badge':
+            $badgeClass = $column['badgeClass'] ?? [];
+            $class = $badgeClass[$value] ?? 'primary';
+            return '<span class="badge badge-' . $class . '">' . htmlspecialchars($value) . '</span>';
+            
+        case 'boolean':
+            $icon = $value ? 'fa-check text-success' : 'fa-times text-danger';
+            return '<i class="fas ' . $icon . '"></i>';
+            
+        case 'link':
+            $url = $column['linkUrl'] ?? '#';
+            $url = str_replace('{id}', $row['id'] ?? '', $url);
+            return '<a href="' . htmlspecialchars($url) . '" class="table-link">' . htmlspecialchars($value) . '</a>';
+            
+        case 'image':
+            $alt = htmlspecialchars($value);
+            return '<img src="' . htmlspecialchars($value) . '" alt="' . $alt . '" style="width: 40px; height: 40px; border-radius: var(--radius-md); object-fit: cover;">';
+            
+        case 'progress':
+            $percentage = min(100, max(0, $value));
+            return '<div class="progress-bar" style="background-color: var(--border-light); border-radius: var(--radius-full); height: 8px; width: 100px;">
+                        <div class="progress-fill" style="background-color: var(--primary-color); height: 100%; width: ' . $percentage . '%; border-radius: var(--radius-full);"></div>
+                    </div>';
+            
+        case 'status':
+            $colors = [
+                'active' => 'success',
+                'inactive' => 'danger',
+                'pending' => 'warning',
+                'completed' => 'success',
+                'cancelled' => 'danger'
+            ];
+            $color = $colors[strtolower($value)] ?? 'primary';
+            return '<span class="badge badge-' . $color . '">' . htmlspecialchars($value) . '</span>';
+            
+        case 'actions':
+            // Actions personnalisées dans la cellule
+            $actions = $column['actions'] ?? [];
+            $html = '<div class="cell-actions" style="display: flex; gap: var(--spacing-xs);">';
+            foreach ($actions as $action) {
+                $icon = htmlspecialchars($action['icon'] ?? 'fas fa-eye');
+                $class = htmlspecialchars($action['class'] ?? 'btn-outline');
+                $title = htmlspecialchars($action['title'] ?? '');
+                $onclick = str_replace('{id}', $row['id'] ?? '', $action['onclick'] ?? '');
+                
+                $html .= '<button class="btn btn-sm ' . $class . '" title="' . $title . '" onclick="' . $onclick . '">';
+                $html .= '<i class="' . $icon . '"></i>';
+                $html .= '</button>';
+            }
+            $html .= '</div>';
+            return $html;
+            
+        default:
+            return htmlspecialchars($value);
+    }
 }
+
+/**
+ * Rend un tableau simple
+ * @param array $data Données du tableau
+ * @param array $headers En-têtes du tableau
+ * @param string $class Classes CSS additionnelles
+ */
+function renderSimpleTable($data, $headers = [], $class = '') {
+    if (empty($data)) return;
+    
+    echo '<div class="table-container">';
+    echo '<table class="table ' . htmlspecialchars($class) . '">';
+    
+    // En-têtes
+    if (!empty($headers)) {
+        echo '<thead><tr>';
+        foreach ($headers as $header) {
+            echo '<th>' . htmlspecialchars($header) . '</th>';
+        }
+        echo '</tr></thead>';
+    }
+    
+    // Données
+    echo '<tbody>';
+    foreach ($data as $row) {
+        echo '<tr>';
+        if (is_array($row)) {
+            foreach ($row as $cell) {
+                echo '<td>' . htmlspecialchars($cell) . '</td>';
+            }
+        } else {
+            echo '<td>' . htmlspecialchars($row) . '</td>';
+        }
+        echo '</tr>';
+    }
+    echo '</tbody>';
+    
+    echo '</table>';
+    echo '</div>';
+}
+
+/**
+ * JavaScript pour les fonctionnalités des tableaux
+ */
 ?>
-
-<!-- Styles complémentaires pour le tableau -->
-<style>
-.table-container {
-    margin-bottom: 2rem;
-}
-
-.table-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    padding: 1.5rem;
-    border-bottom: 1px solid var(--border-light);
-}
-
-.table-title {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 0.25rem;
-}
-
-.table-subtitle {
-    color: var(--text-muted);
-    font-size: 0.9rem;
-}
-
-.table-controls {
-    display: flex;
-    gap: 1rem;
-    align-items: center;
-}
-
-.table-search {
-    position: relative;
-}
-
-.table-search .form-group {
-    margin-bottom: 0;
-    position: relative;
-}
-
-.table-search i {
-    position: absolute;
-    right: 1rem;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--text-muted);
-}
-
-.sortable {
-    cursor: pointer;
-    user-select: none;
-    position: relative;
-}
-
-.sortable:hover {
-    background: var(--bg-tertiary);
-}
-
-.sort-icon {
-    margin-left: 0.5rem;
-    opacity: 0.5;
-    transition: opacity var(--transition-fast);
-}
-
-.sortable:hover .sort-icon {
-    opacity: 1;
-}
-
-.actions-column {
-    width: 120px;
-    text-align: center;
-}
-
-.empty-state {
-    padding: 3rem 2rem;
-    text-align: center;
-    color: var(--text-muted);
-}
-
-.empty-state i {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-    opacity: 0.5;
-}
-
-.badge {
-    padding: 0.25rem 0.75rem;
-    border-radius: 1rem;
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.badge-primary {
-    background: rgba(30, 136, 229, 0.1);
-    color: var(--primary-color);
-}
-
-.badge-success {
-    background: rgba(76, 175, 80, 0.1);
-    color: var(--success-color);
-}
-
-.badge-warning {
-    background: rgba(255, 167, 38, 0.1);
-    color: var(--warning-color);
-}
-
-.badge-error {
-    background: rgba(244, 67, 54, 0.1);
-    color: var(--error-color);
-}
-
-.badge-info {
-    background: rgba(33, 150, 243, 0.1);
-    color: #2196F3;
-}
-
-.progress-bar {
-    position: relative;
-    background: var(--border-light);
-    border-radius: 1rem;
-    height: 1.5rem;
-    overflow: hidden;
-}
-
-.progress-fill {
-    background: var(--success-color);
-    height: 100%;
-    transition: width var(--transition-normal);
-}
-
-.progress-text {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.table-image {
-    width: 40px;
-    height: 40px;
-    border-radius: var(--border-radius-sm);
-    object-fit: cover;
-}
-
-.table-link {
-    color: var(--primary-color);
-    text-decoration: none;
-    font-weight: 500;
-}
-
-.table-link:hover {
-    text-decoration: underline;
-}
-
-.table-pagination {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem 1.5rem;
-    border-top: 1px solid var(--border-light);
-}
-
-.pagination-info {
-    color: var(--text-muted);
-    font-size: 0.9rem;
-}
-
-.pagination-controls {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.pagination-pages {
-    display: flex;
-    gap: 0.25rem;
-}
-
-@media (max-width: 768px) {
-    .table-header {
-        flex-direction: column;
-        gap: 1rem;
-    }
+<script>
+// Fonctions globales pour les tableaux
+function initDataTable(tableId, config) {
+    const table = document.getElementById(tableId);
+    const searchInput = document.getElementById(tableId + 'Search');
     
-    .table-controls {
-        width: 100%;
-        justify-content: flex-end;
-    }
-    
-    .table-pagination {
-        flex-direction: column;
-        gap: 1rem;
-    }
-    
-    .pagination-controls {
-        flex-wrap: wrap;
-        justify-content: center;
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            filterTable(tableId, this.value);
+        });
     }
 }
-</style>
+
+function filterTable(tableId, searchTerm) {
+    const table = document.getElementById(tableId);
+    const rows = table.querySelectorAll('tbody tr');
+    
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        const matches = text.includes(searchTerm.toLowerCase());
+        row.style.display = matches ? '' : 'none';
+    });
+}
+
+function sortTable(tableId, column) {
+    const table = document.getElementById(tableId);
+    const tbody = table.querySelector('tbody');
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    const headerIndex = Array.from(table.querySelectorAll('th')).findIndex(th => 
+        th.onclick && th.onclick.toString().includes(column)
+    );
+    
+    if (headerIndex === -1) return;
+    
+    const isAscending = !table.dataset.sortAsc || table.dataset.sortAsc === 'false';
+    table.dataset.sortAsc = isAscending;
+    
+    rows.sort((a, b) => {
+        const aVal = a.cells[headerIndex].textContent.trim();
+        const bVal = b.cells[headerIndex].textContent.trim();
+        
+        // Détection du type de données
+        const aNum = parseFloat(aVal.replace(/[^\d.-]/g, ''));
+        const bNum = parseFloat(bVal.replace(/[^\d.-]/g, ''));
+        
+        if (!isNaN(aNum) && !isNaN(bNum)) {
+            return isAscending ? aNum - bNum : bNum - aNum;
+        } else {
+            return isAscending ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+        }
+    });
+    
+    // Réorganiser les lignes
+    rows.forEach(row => tbody.appendChild(row));
+    
+    // Mettre à jour les icônes de tri
+    table.querySelectorAll('.sort-icon').forEach(icon => {
+        icon.className = 'fas fa-sort sort-icon';
+        icon.style.opacity = '0.5';
+    });
+    
+    const currentIcon = table.querySelectorAll('th')[headerIndex].querySelector('.sort-icon');
+    if (currentIcon) {
+        currentIcon.className = isAscending ? 'fas fa-sort-up sort-icon' : 'fas fa-sort-down sort-icon';
+        currentIcon.style.opacity = '1';
+    }
+}
+
+function exportTable(tableId) {
+    const table = document.getElementById(tableId);
+    const rows = table.querySelectorAll('tr');
+    let csv = [];
+    
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('th, td');
+        const rowData = Array.from(cells).map(cell => {
+            return '"' + cell.textContent.trim().replace(/"/g, '""') + '"';
+        });
+        csv.push(rowData.join(','));
+    });
+    
+    const csvContent = csv.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    
+    if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', tableId + '_export.csv');
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+}
+
+function goToPage(tableId, page) {
+    // Implémentation de la pagination
+    console.log('Go to page', page, 'for table', tableId);
+}
+</script>

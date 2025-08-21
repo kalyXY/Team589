@@ -1,801 +1,535 @@
 /**
  * SCOLARIA - JavaScript Principal
- * Gestion des interactions UI, dark mode, sidebar, notifications, etc.
+ * Gestion des interactions communes, sidebar, dark mode, notifications
+ * Team589
  */
 
-// ========================================
-// CONFIGURATION GLOBALE
-// ========================================
-
-const SCOLARIA = {
-    config: {
-        sidebarStorageKey: 'scolaria_sidebar_collapsed',
-        themeStorageKey: 'scolaria_theme',
-        animationDuration: 300,
-        debounceDelay: 300
-    },
-    
-    elements: {
-        sidebar: null,
-        sidebarToggle: null,
-        themeToggle: null,
-        mobileOverlay: null,
-        userDropdown: null,
-        notificationsDropdown: null
-    },
-    
-    state: {
-        sidebarCollapsed: false,
-        currentTheme: 'light',
-        isMobile: false
+class ScolariApp {
+    constructor() {
+        this.sidebar = null;
+        this.sidebarToggle = null;
+        this.themeToggle = null;
+        this.currentTheme = localStorage.getItem('theme') || 'light';
+        
+        this.init();
     }
-};
 
-// ========================================
-// INITIALISATION
-// ========================================
-
-document.addEventListener('DOMContentLoaded', function() {
-    initializeElements();
-    initializeSidebar();
-    initializeTheme();
-    initializeResponsive();
-    initializeNotifications();
-    initializeUserMenu();
-    initializeTooltips();
-    initializeAnimations();
-    initializeTableFeatures();
-    
-    console.log('🎓 Scolaria UI initialized successfully!');
-});
-
-// ========================================
-// GESTION DES ÉLÉMENTS DOM
-// ========================================
-
-function initializeElements() {
-    SCOLARIA.elements = {
-        sidebar: document.getElementById('sidebar'),
-        sidebarToggle: document.getElementById('sidebarToggle'),
-        themeToggle: document.getElementById('themeToggle'),
-        themeIcon: document.getElementById('themeIcon'),
-        themeText: document.getElementById('themeText'),
-        mobileOverlay: document.getElementById('mobileOverlay'),
-        userDropdown: document.getElementById('userDropdown'),
-        notificationsDropdown: document.getElementById('notificationsDropdown')
-    };
-}
-
-// ========================================
-// GESTION DE LA SIDEBAR
-// ========================================
-
-function initializeSidebar() {
-    const { sidebar, sidebarToggle } = SCOLARIA.elements;
-    
-    if (!sidebar || !sidebarToggle) return;
-    
-    // Charger l'état sauvegardé
-    const savedState = localStorage.getItem(SCOLARIA.config.sidebarStorageKey);
-    if (savedState === 'true') {
-        toggleSidebar(true);
+    init() {
+        this.initElements();
+        this.initTheme();
+        this.initSidebar();
+        this.initNotifications();
+        this.bindEvents();
+        this.initTooltips();
     }
-    
-    // Event listener pour le toggle
-    sidebarToggle.addEventListener('click', () => toggleSidebar());
-    
-    // Fermer la sidebar sur mobile quand on clique sur un lien
-    const navLinks = sidebar.querySelectorAll('.nav-link');
-    navLinks.forEach(link => {
-        link.addEventListener('click', () => {
-            if (SCOLARIA.state.isMobile) {
-                closeSidebar();
+
+    initElements() {
+        this.sidebar = document.querySelector('.sidebar');
+        this.sidebarToggle = document.querySelector('.sidebar-toggle');
+        this.themeToggle = document.querySelector('.theme-toggle');
+        this.mainContent = document.querySelector('.main-content');
+    }
+
+    initTheme() {
+        // Appliquer le thème sauvegardé
+        document.documentElement.setAttribute('data-theme', this.currentTheme);
+        
+        // Mettre à jour l'icône du toggle
+        if (this.themeToggle) {
+            this.updateThemeIcon();
+        }
+    }
+
+    initSidebar() {
+        // Restaurer l'état de la sidebar
+        const sidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+        if (sidebarCollapsed && this.sidebar) {
+            this.sidebar.classList.add('collapsed');
+        }
+
+        // Marquer le lien actif
+        this.setActiveNavLink();
+    }
+
+    initNotifications() {
+        // Initialiser le système de notifications
+        this.createNotificationContainer();
+        
+        // Vérifier les notifications au chargement
+        this.checkNotifications();
+        
+        // Vérifier périodiquement
+        setInterval(() => this.checkNotifications(), 30000); // 30 secondes
+    }
+
+    bindEvents() {
+        // Toggle sidebar
+        if (this.sidebarToggle) {
+            this.sidebarToggle.addEventListener('click', () => this.toggleSidebar());
+        }
+
+        // Toggle theme
+        if (this.themeToggle) {
+            this.themeToggle.addEventListener('click', () => this.toggleTheme());
+        }
+
+        // Fermer sidebar sur mobile en cliquant à l'extérieur
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth <= 768) {
+                if (!this.sidebar?.contains(e.target) && !this.sidebarToggle?.contains(e.target)) {
+                    this.closeMobileSidebar();
+                }
             }
         });
-    });
-}
 
-function toggleSidebar(force = null) {
-    const { sidebar } = SCOLARIA.elements;
-    
-    if (force !== null) {
-        SCOLARIA.state.sidebarCollapsed = force;
-    } else {
-        SCOLARIA.state.sidebarCollapsed = !SCOLARIA.state.sidebarCollapsed;
+        // Responsive sidebar
+        window.addEventListener('resize', () => this.handleResize());
+
+        // Navigation avec clavier
+        document.addEventListener('keydown', (e) => this.handleKeyboard(e));
+
+        // Gestion des modales
+        this.initModals();
     }
-    
-    if (SCOLARIA.state.isMobile) {
-        // Sur mobile, on affiche/cache la sidebar
-        sidebar.classList.toggle('active', !SCOLARIA.state.sidebarCollapsed);
-        document.body.classList.toggle('sidebar-open', !SCOLARIA.state.sidebarCollapsed);
-        toggleMobileOverlay(!SCOLARIA.state.sidebarCollapsed);
-    } else {
-        // Sur desktop, on collapse la sidebar
-        sidebar.classList.toggle('collapsed', SCOLARIA.state.sidebarCollapsed);
-    }
-    
-    // Sauvegarder l'état
-    localStorage.setItem(SCOLARIA.config.sidebarStorageKey, SCOLARIA.state.sidebarCollapsed);
-    
-    // Animation du contenu
-    animateContentResize();
-}
 
-function closeSidebar() {
-    if (SCOLARIA.state.isMobile) {
-        toggleSidebar(true);
-    }
-}
+    toggleSidebar() {
+        if (!this.sidebar) return;
 
-function toggleMobileOverlay(show) {
-    const { mobileOverlay } = SCOLARIA.elements;
-    if (mobileOverlay) {
-        mobileOverlay.style.display = show ? 'block' : 'none';
-    }
-}
-
-// ========================================
-// GESTION DU THÈME (DARK MODE)
-// ========================================
-
-function initializeTheme() {
-    const { themeToggle } = SCOLARIA.elements;
-    
-    if (!themeToggle) return;
-    
-    // Charger le thème sauvegardé ou détecter la préférence système
-    const savedTheme = localStorage.getItem(SCOLARIA.config.themeStorageKey);
-    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    
-    SCOLARIA.state.currentTheme = savedTheme || (systemPrefersDark ? 'dark' : 'light');
-    
-    applyTheme(SCOLARIA.state.currentTheme);
-    
-    // Event listener pour le toggle
-    themeToggle.addEventListener('click', toggleTheme);
-    
-    // Écouter les changements de préférence système
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-        if (!localStorage.getItem(SCOLARIA.config.themeStorageKey)) {
-            applyTheme(e.matches ? 'dark' : 'light');
-        }
-    });
-}
-
-function toggleTheme() {
-    const newTheme = SCOLARIA.state.currentTheme === 'light' ? 'dark' : 'light';
-    applyTheme(newTheme);
-    localStorage.setItem(SCOLARIA.config.themeStorageKey, newTheme);
-}
-
-function applyTheme(theme) {
-    const { themeIcon, themeText } = SCOLARIA.elements;
-    
-    SCOLARIA.state.currentTheme = theme;
-    document.documentElement.setAttribute('data-theme', theme);
-    
-    // Mettre à jour l'icône et le texte du toggle
-    if (themeIcon && themeText) {
-        if (theme === 'dark') {
-            themeIcon.className = 'fas fa-sun';
-            themeText.textContent = 'Clair';
+        if (window.innerWidth <= 768) {
+            // Mode mobile - toggle visibility
+            this.sidebar.classList.toggle('mobile-open');
         } else {
-            themeIcon.className = 'fas fa-moon';
-            themeText.textContent = 'Sombre';
+            // Mode desktop - toggle collapsed
+            this.sidebar.classList.toggle('collapsed');
+            localStorage.setItem('sidebarCollapsed', this.sidebar.classList.contains('collapsed'));
         }
     }
-    
-    // Animation de transition
-    document.body.style.transition = 'background-color 0.3s ease, color 0.3s ease';
-    setTimeout(() => {
-        document.body.style.transition = '';
-    }, 300);
-}
 
-// ========================================
-// RESPONSIVE DESIGN
-// ========================================
-
-function initializeResponsive() {
-    checkMobileState();
-    
-    window.addEventListener('resize', debounce(() => {
-        checkMobileState();
-        handleResize();
-    }, SCOLARIA.config.debounceDelay));
-}
-
-function checkMobileState() {
-    const wasMobile = SCOLARIA.state.isMobile;
-    SCOLARIA.state.isMobile = window.innerWidth <= 768;
-    
-    if (wasMobile !== SCOLARIA.state.isMobile) {
-        handleMobileStateChange();
+    closeMobileSidebar() {
+        if (this.sidebar) {
+            this.sidebar.classList.remove('mobile-open');
+        }
     }
-}
 
-function handleMobileStateChange() {
-    const { sidebar } = SCOLARIA.elements;
-    
-    if (SCOLARIA.state.isMobile) {
-        // Passage en mobile
-        sidebar.classList.remove('collapsed');
-        sidebar.classList.remove('active');
-        toggleMobileOverlay(false);
-        document.body.classList.remove('sidebar-open');
-    } else {
-        // Passage en desktop
-        sidebar.classList.remove('active');
-        toggleMobileOverlay(false);
-        document.body.classList.remove('sidebar-open');
+    toggleTheme() {
+        this.currentTheme = this.currentTheme === 'light' ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', this.currentTheme);
+        localStorage.setItem('theme', this.currentTheme);
+        this.updateThemeIcon();
         
-        // Restaurer l'état collapsed si nécessaire
-        const savedState = localStorage.getItem(SCOLARIA.config.sidebarStorageKey);
-        if (savedState === 'true') {
-            sidebar.classList.add('collapsed');
-        }
-    }
-}
-
-function handleResize() {
-    // Recalculer les positions des dropdowns
-    closeAllDropdowns();
-}
-
-// ========================================
-// GESTION DES NOTIFICATIONS
-// ========================================
-
-function initializeNotifications() {
-    // Auto-masquer les messages flash
-    const flashMessages = document.querySelectorAll('.alert');
-    flashMessages.forEach(alert => {
+        // Animation de transition
+        document.body.style.transition = 'background-color 0.3s ease, color 0.3s ease';
         setTimeout(() => {
-            hideAlert(alert);
-        }, 5000);
-    });
-}
-
-function toggleNotifications() {
-    const dropdown = SCOLARIA.elements.notificationsDropdown;
-    if (dropdown) {
-        const isVisible = dropdown.style.display === 'block';
-        closeAllDropdowns();
-        if (!isVisible) {
-            showDropdown(dropdown);
-        }
-    }
-}
-
-function showNotification(message, type = 'info', duration = 5000) {
-    const notification = createNotificationElement(message, type);
-    document.body.appendChild(notification);
-    
-    // Animation d'entrée
-    setTimeout(() => notification.classList.add('show'), 10);
-    
-    // Auto-suppression
-    setTimeout(() => hideAlert(notification), duration);
-    
-    return notification;
-}
-
-function createNotificationElement(message, type) {
-    const notification = document.createElement('div');
-    notification.className = `alert alert-${type} notification-toast animate-slide-in`;
-    
-    const icon = getAlertIcon(type);
-    notification.innerHTML = `
-        <i class="fas fa-${icon}"></i>
-        <span>${message}</span>
-        <button class="alert-close" onclick="hideAlert(this.parentElement)">
-            <i class="fas fa-times"></i>
-        </button>
-    `;
-    
-    return notification;
-}
-
-function getAlertIcon(type) {
-    const icons = {
-        success: 'check-circle',
-        error: 'exclamation-triangle',
-        warning: 'exclamation-triangle',
-        info: 'info-circle'
-    };
-    return icons[type] || 'info-circle';
-}
-
-function hideAlert(alertElement) {
-    if (alertElement) {
-        alertElement.style.opacity = '0';
-        alertElement.style.transform = 'translateY(-20px)';
-        setTimeout(() => {
-            if (alertElement.parentNode) {
-                alertElement.parentNode.removeChild(alertElement);
-            }
+            document.body.style.transition = '';
         }, 300);
     }
-}
 
-// ========================================
-// GESTION DU MENU UTILISATEUR
-// ========================================
-
-function initializeUserMenu() {
-    // Fermer les dropdowns quand on clique ailleurs
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('.user-menu') && !e.target.closest('.notifications')) {
-            closeAllDropdowns();
-        }
-    });
-}
-
-function toggleUserMenu() {
-    const dropdown = SCOLARIA.elements.userDropdown;
-    if (dropdown) {
-        const isVisible = dropdown.style.display === 'block';
-        closeAllDropdowns();
-        if (!isVisible) {
-            showDropdown(dropdown);
+    updateThemeIcon() {
+        if (!this.themeToggle) return;
+        
+        const icon = this.themeToggle.querySelector('i');
+        if (icon) {
+            icon.className = this.currentTheme === 'light' ? 'fas fa-moon' : 'fas fa-sun';
         }
     }
-}
 
-function showDropdown(dropdown) {
-    dropdown.style.display = 'block';
-    dropdown.classList.add('animate-fade-in');
-}
-
-function closeAllDropdowns() {
-    const dropdowns = [
-        SCOLARIA.elements.userDropdown,
-        SCOLARIA.elements.notificationsDropdown
-    ];
-    
-    dropdowns.forEach(dropdown => {
-        if (dropdown) {
-            dropdown.style.display = 'none';
-            dropdown.classList.remove('animate-fade-in');
-        }
-    });
-}
-
-// ========================================
-// GESTION DES TOOLTIPS
-// ========================================
-
-function initializeTooltips() {
-    const tooltipElements = document.querySelectorAll('[data-tooltip]');
-    
-    tooltipElements.forEach(element => {
-        element.addEventListener('mouseenter', showTooltip);
-        element.addEventListener('mouseleave', hideTooltip);
-    });
-}
-
-function showTooltip(e) {
-    const text = e.target.getAttribute('data-tooltip');
-    if (!text) return;
-    
-    const tooltip = document.createElement('div');
-    tooltip.className = 'tooltip';
-    tooltip.textContent = text;
-    tooltip.id = 'active-tooltip';
-    
-    document.body.appendChild(tooltip);
-    
-    const rect = e.target.getBoundingClientRect();
-    tooltip.style.left = rect.left + (rect.width / 2) - (tooltip.offsetWidth / 2) + 'px';
-    tooltip.style.top = rect.top - tooltip.offsetHeight - 10 + 'px';
-    
-    setTimeout(() => tooltip.classList.add('show'), 10);
-}
-
-function hideTooltip() {
-    const tooltip = document.getElementById('active-tooltip');
-    if (tooltip) {
-        tooltip.classList.remove('show');
-        setTimeout(() => tooltip.remove(), 200);
-    }
-}
-
-// ========================================
-// ANIMATIONS
-// ========================================
-
-function initializeAnimations() {
-    // Observer pour les animations au scroll
-    const observerOptions = {
-        threshold: 0.1,
-        rootMargin: '0px 0px -50px 0px'
-    };
-    
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('animate-slide-in');
+    setActiveNavLink() {
+        const currentPath = window.location.pathname;
+        const navLinks = document.querySelectorAll('.nav-link');
+        
+        navLinks.forEach(link => {
+            link.classList.remove('active');
+            const href = link.getAttribute('href');
+            if (href && currentPath.includes(href.replace('./', ''))) {
+                link.classList.add('active');
             }
         });
-    }, observerOptions);
-    
-    // Observer les cartes et tableaux
-    const animatedElements = document.querySelectorAll('.stats-card, .card, .table-container');
-    animatedElements.forEach(el => observer.observe(el));
-}
-
-function animateContentResize() {
-    const mainContent = document.querySelector('.main-content');
-    if (mainContent) {
-        mainContent.style.transition = 'margin-left 0.3s ease';
-        setTimeout(() => {
-            mainContent.style.transition = '';
-        }, 300);
     }
-}
 
-// ========================================
-// FONCTIONNALITÉS DES TABLEAUX
-// ========================================
-
-function initializeTableFeatures() {
-    initializeTableSearch();
-    initializeTableSorting();
-}
-
-function initializeTableSearch() {
-    const searchInputs = document.querySelectorAll('[id$="Search"]');
-    
-    searchInputs.forEach(input => {
-        const tableId = input.id.replace('Search', '');
-        const table = document.getElementById(tableId);
-        
-        if (table) {
-            input.addEventListener('input', debounce((e) => {
-                filterTable(table, e.target.value);
-            }, SCOLARIA.config.debounceDelay));
+    handleResize() {
+        if (window.innerWidth > 768) {
+            // Desktop - fermer le menu mobile
+            this.closeMobileSidebar();
         }
-    });
-}
+    }
 
-function filterTable(table, searchTerm) {
-    const tbody = table.querySelector('tbody');
-    const rows = tbody.querySelectorAll('tr');
-    
-    searchTerm = searchTerm.toLowerCase();
-    
-    rows.forEach(row => {
-        const text = row.textContent.toLowerCase();
-        const shouldShow = text.includes(searchTerm);
-        row.style.display = shouldShow ? '' : 'none';
-    });
-    
-    // Mettre à jour les couleurs alternées
-    updateTableStripes(tbody);
-}
-
-function initializeTableSorting() {
-    const sortableHeaders = document.querySelectorAll('th.sortable');
-    
-    sortableHeaders.forEach(header => {
-        header.addEventListener('click', () => {
-            const table = header.closest('table');
-            const columnIndex = Array.from(header.parentNode.children).indexOf(header);
-            const column = header.getAttribute('data-column');
-            
-            sortTable(table, columnIndex, column);
-        });
-    });
-}
-
-function sortTable(table, columnIndex, column) {
-    const tbody = table.querySelector('tbody');
-    const rows = Array.from(tbody.querySelectorAll('tr'));
-    const header = table.querySelector(`th[data-column="${column}"]`);
-    
-    // Déterminer l'ordre de tri
-    const currentOrder = header.getAttribute('data-sort') || 'asc';
-    const newOrder = currentOrder === 'asc' ? 'desc' : 'asc';
-    
-    // Réinitialiser tous les headers
-    table.querySelectorAll('th.sortable').forEach(h => {
-        h.removeAttribute('data-sort');
-        h.querySelector('.sort-icon').className = 'fas fa-sort sort-icon';
-    });
-    
-    // Mettre à jour le header actuel
-    header.setAttribute('data-sort', newOrder);
-    header.querySelector('.sort-icon').className = `fas fa-sort-${newOrder === 'asc' ? 'up' : 'down'} sort-icon`;
-    
-    // Trier les lignes
-    rows.sort((a, b) => {
-        const aValue = a.cells[columnIndex].textContent.trim();
-        const bValue = b.cells[columnIndex].textContent.trim();
-        
-        // Détecter le type de données
-        const aNum = parseFloat(aValue.replace(/[^0-9.-]/g, ''));
-        const bNum = parseFloat(bValue.replace(/[^0-9.-]/g, ''));
-        
-        let comparison = 0;
-        
-        if (!isNaN(aNum) && !isNaN(bNum)) {
-            // Comparaison numérique
-            comparison = aNum - bNum;
-        } else {
-            // Comparaison alphabétique
-            comparison = aValue.localeCompare(bValue);
+    handleKeyboard(e) {
+        // Échap pour fermer modales et menus
+        if (e.key === 'Escape') {
+            this.closeMobileSidebar();
+            this.closeAllModals();
         }
         
-        return newOrder === 'asc' ? comparison : -comparison;
-    });
-    
-    // Réorganiser le tableau
-    rows.forEach(row => tbody.appendChild(row));
-    
-    // Mettre à jour les couleurs alternées
-    updateTableStripes(tbody);
-}
-
-function updateTableStripes(tbody) {
-    const visibleRows = Array.from(tbody.querySelectorAll('tr')).filter(row => 
-        row.style.display !== 'none'
-    );
-    
-    visibleRows.forEach((row, index) => {
-        row.style.backgroundColor = index % 2 === 0 ? '' : 'rgba(30, 136, 229, 0.02)';
-    });
-}
-
-// ========================================
-// FONCTIONS D'EXPORT
-// ========================================
-
-function exportTable(tableId, format = 'csv') {
-    const table = document.getElementById(tableId);
-    if (!table) return;
-    
-    const data = extractTableData(table);
-    
-    switch (format) {
-        case 'csv':
-            exportToCSV(data, `${tableId}_export.csv`);
-            break;
-        case 'excel':
-            exportToExcel(data, `${tableId}_export.xlsx`);
-            break;
-        default:
-            exportToCSV(data, `${tableId}_export.csv`);
+        // Ctrl/Cmd + B pour toggle sidebar
+        if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+            e.preventDefault();
+            this.toggleSidebar();
+        }
+        
+        // Ctrl/Cmd + D pour toggle dark mode
+        if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+            e.preventDefault();
+            this.toggleTheme();
+        }
     }
-}
 
-function extractTableData(table) {
-    const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent.trim());
-    const rows = Array.from(table.querySelectorAll('tbody tr')).map(tr => 
-        Array.from(tr.querySelectorAll('td')).map(td => td.textContent.trim())
-    );
-    
-    return { headers, rows };
-}
+    // Système de notifications
+    createNotificationContainer() {
+        if (!document.querySelector('.notifications-container')) {
+            const container = document.createElement('div');
+            container.className = 'notifications-container';
+            container.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 3000;
+                max-width: 400px;
+                pointer-events: none;
+            `;
+            document.body.appendChild(container);
+        }
+    }
 
-function exportToCSV(data, filename) {
-    const csvContent = [
-        data.headers.join(','),
-        ...data.rows.map(row => row.map(cell => `"${cell.replace(/"/g, '""')}"`).join(','))
-    ].join('\n');
-    
-    downloadFile(csvContent, filename, 'text/csv');
-}
+    showNotification(message, type = 'info', duration = 5000) {
+        const container = document.querySelector('.notifications-container');
+        if (!container) return;
 
-function downloadFile(content, filename, mimeType) {
-    const blob = new Blob([content], { type: mimeType });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
-    
-    showNotification(`Fichier ${filename} téléchargé avec succès`, 'success');
-}
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type} animate-slideInDown`;
+        notification.style.cssText = `
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--${type === 'success' ? 'success' : type === 'warning' ? 'warning' : type === 'error' ? 'danger' : 'info'}-color);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
+            margin-bottom: var(--spacing-sm);
+            box-shadow: var(--shadow-lg);
+            pointer-events: auto;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        `;
 
-// ========================================
-// FONCTIONS DE PAGINATION
-// ========================================
-
-function changePage(page) {
-    const currentUrl = new URL(window.location);
-    currentUrl.searchParams.set('page', page);
-    window.location.href = currentUrl.toString();
-}
-
-// ========================================
-// UTILITAIRES
-// ========================================
-
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
+        const icons = {
+            success: 'fas fa-check-circle',
+            warning: 'fas fa-exclamation-triangle',
+            error: 'fas fa-times-circle',
+            info: 'fas fa-info-circle'
         };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-}
 
-function formatNumber(number, decimals = 0) {
-    return new Intl.NumberFormat('fr-FR', {
-        minimumFractionDigits: decimals,
-        maximumFractionDigits: decimals
-    }).format(number);
-}
+        notification.innerHTML = `
+            <div style="display: flex; align-items: flex-start; gap: var(--spacing-sm);">
+                <i class="${icons[type] || icons.info}" style="color: var(--${type === 'success' ? 'success' : type === 'warning' ? 'warning' : type === 'error' ? 'danger' : 'info'}-color); margin-top: 2px;"></i>
+                <div style="flex: 1; color: var(--text-primary); font-size: var(--font-size-sm);">${message}</div>
+                <button style="background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 0; font-size: var(--font-size-lg);">&times;</button>
+            </div>
+        `;
 
-function formatCurrency(amount, currency = 'EUR') {
-    return new Intl.NumberFormat('fr-FR', {
-        style: 'currency',
-        currency: currency
-    }).format(amount);
-}
+        // Fermer au clic
+        notification.addEventListener('click', () => this.removeNotification(notification));
 
-function formatDate(date, options = {}) {
-    const defaultOptions = {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    };
-    
-    return new Intl.DateTimeFormat('fr-FR', { ...defaultOptions, ...options }).format(new Date(date));
-}
+        container.appendChild(notification);
 
-// ========================================
-// API HELPERS
-// ========================================
-
-async function apiRequest(url, options = {}) {
-    const defaultOptions = {
-        headers: {
-            'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
+        // Auto-remove
+        if (duration > 0) {
+            setTimeout(() => this.removeNotification(notification), duration);
         }
-    };
-    
-    try {
-        const response = await fetch(url, { ...defaultOptions, ...options });
+
+        return notification;
+    }
+
+    removeNotification(notification) {
+        if (notification && notification.parentNode) {
+            notification.style.transform = 'translateX(100%)';
+            notification.style.opacity = '0';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
+        }
+    }
+
+    checkNotifications() {
+        // Vérifier les alertes de stock, nouvelles commandes, etc.
+        // Cette fonction sera étendue selon les besoins spécifiques
         
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+        // Exemple : vérifier les stocks faibles
+        if (typeof window.checkLowStock === 'function') {
+            window.checkLowStock().then(count => {
+                if (count > 0) {
+                    this.updateNotificationBadge(count);
+                }
+            });
+        }
+    }
+
+    updateNotificationBadge(count) {
+        const badge = document.querySelector('.notifications-badge');
+        if (badge) {
+            badge.textContent = count;
+            badge.style.display = count > 0 ? 'block' : 'none';
+        }
+    }
+
+    // Gestion des modales
+    initModals() {
+        // Fermer modales en cliquant sur le backdrop
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal')) {
+                this.closeModal(e.target);
+            }
+        });
+
+        // Fermer modales avec le bouton close
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal-close') || e.target.closest('.modal-close')) {
+                const modal = e.target.closest('.modal');
+                if (modal) {
+                    this.closeModal(modal);
+                }
+            }
+        });
+    }
+
+    openModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.classList.add('show');
+            document.body.style.overflow = 'hidden';
+            
+            // Focus sur le premier élément focusable
+            const focusable = modal.querySelector('input, select, textarea, button');
+            if (focusable) {
+                setTimeout(() => focusable.focus(), 100);
+            }
+        }
+    }
+
+    closeModal(modal) {
+        if (typeof modal === 'string') {
+            modal = document.getElementById(modal);
         }
         
-        return await response.json();
-    } catch (error) {
-        console.error('API Request failed:', error);
-        showNotification('Erreur de communication avec le serveur', 'error');
-        throw error;
-    }
-}
-
-// ========================================
-// GESTION DES MODALES
-// ========================================
-
-function openModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-        modal.style.display = 'block';
-        modal.classList.add('animate-fade-in');
-        document.body.style.overflow = 'hidden';
-    }
-}
-
-function closeModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-        modal.classList.remove('animate-fade-in');
-        setTimeout(() => {
-            modal.style.display = 'none';
+        if (modal) {
+            modal.classList.remove('show');
             document.body.style.overflow = '';
-        }, 200);
-    }
-}
-
-// Fermer les modales avec Escape
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-        const openModals = document.querySelectorAll('.modal[style*="display: block"]');
-        openModals.forEach(modal => closeModal(modal.id));
-    }
-});
-
-// ========================================
-// VALIDATION DE FORMULAIRES
-// ========================================
-
-function validateForm(formId) {
-    const form = document.getElementById(formId);
-    if (!form) return false;
-    
-    const requiredFields = form.querySelectorAll('[required]');
-    let isValid = true;
-    
-    requiredFields.forEach(field => {
-        if (!field.value.trim()) {
-            showFieldError(field, 'Ce champ est obligatoire');
-            isValid = false;
-        } else {
-            clearFieldError(field);
-        }
-    });
-    
-    return isValid;
-}
-
-function showFieldError(field, message) {
-    clearFieldError(field);
-    
-    field.classList.add('error');
-    const errorDiv = document.createElement('div');
-    errorDiv.className = 'field-error';
-    errorDiv.textContent = message;
-    
-    field.parentNode.appendChild(errorDiv);
-}
-
-function clearFieldError(field) {
-    field.classList.remove('error');
-    const existingError = field.parentNode.querySelector('.field-error');
-    if (existingError) {
-        existingError.remove();
-    }
-}
-
-// ========================================
-// RACCOURCIS CLAVIER
-// ========================================
-
-document.addEventListener('keydown', (e) => {
-    // Ctrl/Cmd + K : Focus sur la recherche
-    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-        e.preventDefault();
-        const searchInput = document.querySelector('input[type="search"], input[placeholder*="recherch"]');
-        if (searchInput) {
-            searchInput.focus();
         }
     }
-    
-    // Ctrl/Cmd + B : Toggle sidebar
-    if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
-        e.preventDefault();
-        toggleSidebar();
+
+    closeAllModals() {
+        const modals = document.querySelectorAll('.modal.show');
+        modals.forEach(modal => this.closeModal(modal));
     }
-    
-    // Ctrl/Cmd + D : Toggle dark mode
-    if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
-        e.preventDefault();
-        toggleTheme();
+
+    // Tooltips
+    initTooltips() {
+        const tooltipElements = document.querySelectorAll('[data-tooltip]');
+        tooltipElements.forEach(element => {
+            this.createTooltip(element);
+        });
     }
+
+    createTooltip(element) {
+        const tooltipText = element.getAttribute('data-tooltip');
+        if (!tooltipText) return;
+
+        let tooltip = null;
+
+        element.addEventListener('mouseenter', () => {
+            tooltip = document.createElement('div');
+            tooltip.className = 'tooltip';
+            tooltip.textContent = tooltipText;
+            tooltip.style.cssText = `
+                position: absolute;
+                background: var(--text-dark);
+                color: var(--text-white);
+                padding: var(--spacing-xs) var(--spacing-sm);
+                border-radius: var(--radius-sm);
+                font-size: var(--font-size-xs);
+                white-space: nowrap;
+                z-index: 4000;
+                pointer-events: none;
+                opacity: 0;
+                transition: opacity var(--transition-fast);
+            `;
+
+            document.body.appendChild(tooltip);
+
+            // Position du tooltip
+            const rect = element.getBoundingClientRect();
+            const tooltipRect = tooltip.getBoundingClientRect();
+            
+            tooltip.style.left = `${rect.left + (rect.width - tooltipRect.width) / 2}px`;
+            tooltip.style.top = `${rect.top - tooltipRect.height - 8}px`;
+            
+            // Animation d'apparition
+            setTimeout(() => {
+                if (tooltip) tooltip.style.opacity = '1';
+            }, 10);
+        });
+
+        element.addEventListener('mouseleave', () => {
+            if (tooltip) {
+                tooltip.style.opacity = '0';
+                setTimeout(() => {
+                    if (tooltip && tooltip.parentNode) {
+                        tooltip.parentNode.removeChild(tooltip);
+                    }
+                }, 150);
+            }
+        });
+    }
+
+    // Utilitaires
+    formatNumber(num) {
+        return new Intl.NumberFormat('fr-FR').format(num);
+    }
+
+    formatCurrency(amount) {
+        return new Intl.NumberFormat('fr-FR', {
+            style: 'currency',
+            currency: 'EUR'
+        }).format(amount);
+    }
+
+    formatDate(date) {
+        return new Intl.DateTimeFormat('fr-FR', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        }).format(new Date(date));
+    }
+
+    formatDateTime(date) {
+        return new Intl.DateTimeFormat('fr-FR', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        }).format(new Date(date));
+    }
+
+    // Validation de formulaires
+    validateForm(form) {
+        const inputs = form.querySelectorAll('input[required], select[required], textarea[required]');
+        let isValid = true;
+
+        inputs.forEach(input => {
+            if (!input.value.trim()) {
+                this.showFieldError(input, 'Ce champ est requis');
+                isValid = false;
+            } else {
+                this.clearFieldError(input);
+            }
+
+            // Validation email
+            if (input.type === 'email' && input.value) {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(input.value)) {
+                    this.showFieldError(input, 'Format d\'email invalide');
+                    isValid = false;
+                }
+            }
+
+            // Validation numérique
+            if (input.type === 'number' && input.value) {
+                const min = parseFloat(input.getAttribute('min'));
+                const max = parseFloat(input.getAttribute('max'));
+                const value = parseFloat(input.value);
+
+                if (!isNaN(min) && value < min) {
+                    this.showFieldError(input, `La valeur doit être supérieure à ${min}`);
+                    isValid = false;
+                }
+
+                if (!isNaN(max) && value > max) {
+                    this.showFieldError(input, `La valeur doit être inférieure à ${max}`);
+                    isValid = false;
+                }
+            }
+        });
+
+        return isValid;
+    }
+
+    showFieldError(input, message) {
+        this.clearFieldError(input);
+        
+        input.classList.add('error');
+        input.style.borderColor = 'var(--danger-color)';
+        
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'field-error';
+        errorDiv.style.cssText = `
+            color: var(--danger-color);
+            font-size: var(--font-size-xs);
+            margin-top: var(--spacing-xs);
+        `;
+        errorDiv.textContent = message;
+        
+        input.parentNode.appendChild(errorDiv);
+    }
+
+    clearFieldError(input) {
+        input.classList.remove('error');
+        input.style.borderColor = '';
+        
+        const errorDiv = input.parentNode.querySelector('.field-error');
+        if (errorDiv) {
+            errorDiv.remove();
+        }
+    }
+
+    // API Helper
+    async apiRequest(url, options = {}) {
+        const defaultOptions = {
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        };
+
+        const config = { ...defaultOptions, ...options };
+        
+        try {
+            const response = await fetch(url, config);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                return await response.json();
+            } else {
+                return await response.text();
+            }
+        } catch (error) {
+            console.error('API Request failed:', error);
+            this.showNotification('Erreur de connexion au serveur', 'error');
+            throw error;
+        }
+    }
+}
+
+// Initialisation globale
+let app;
+
+document.addEventListener('DOMContentLoaded', () => {
+    app = new ScolariApp();
+    
+    // Rendre l'app disponible globalement
+    window.ScolariApp = app;
+    
+    // Fonctions globales pour compatibilité
+    window.showNotification = (message, type, duration) => app.showNotification(message, type, duration);
+    window.openModal = (modalId) => app.openModal(modalId);
+    window.closeModal = (modal) => app.closeModal(modal);
+    window.validateForm = (form) => app.validateForm(form);
 });
 
-// ========================================
-// EXPORT DES FONCTIONS GLOBALES
-// ========================================
-
-// Rendre certaines fonctions disponibles globalement
-window.SCOLARIA = SCOLARIA;
-window.toggleSidebar = toggleSidebar;
-window.closeSidebar = closeSidebar;
-window.toggleTheme = toggleTheme;
-window.toggleNotifications = toggleNotifications;
-window.toggleUserMenu = toggleUserMenu;
-window.showNotification = showNotification;
-window.hideAlert = hideAlert;
-window.exportTable = exportTable;
-window.changePage = changePage;
-window.openModal = openModal;
-window.closeModal = closeModal;
-window.validateForm = validateForm;
-
-console.log('📱 Scolaria JavaScript loaded and ready!');
+// Export pour modules
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = ScolariApp;
+}
