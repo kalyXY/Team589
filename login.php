@@ -34,14 +34,10 @@ session_start();
 
 // Redirection si déjà connecté (selon rôle)
 if (!empty($_SESSION['user_id']) && !empty($_SESSION['role'])) {
+    require_once __DIR__ . '/config/auth.php';
     $existingRole = (string) $_SESSION['role'];
-    if (in_array($existingRole, ['admin', 'gestionnaire'], true)) {
-        header('Location: ' . BASE_URL . 'dashboard.php');
-    } elseif ($existingRole === 'caissier') {
-        header('Location: ' . BASE_URL . 'pos.php');
-    } else {
-        header('Location: ' . BASE_URL . 'stocks.php?view=readonly');
-    }
+    $target = landing_for_role($existingRole);
+    header('Location: ' . BASE_URL . $target);
     exit;
 }
 
@@ -72,14 +68,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
 
                 // Redirection selon rôle
-                $target = 'dashboard.php';
-                if (in_array($_SESSION['role'], ['admin', 'gestionnaire'], true)) {
-                    $target = 'dashboard.php';
-                } elseif ($_SESSION['role'] === 'caissier') {
-                    $target = 'pos.php';
-                } else {
-                    $target = 'stocks.php?view=readonly';
-                }
+                require_once __DIR__ . '/config/auth.php';
+                $target = landing_for_role((string)$_SESSION['role']);
                 header('Location: ' . BASE_URL . $target);
                 exit;
             }

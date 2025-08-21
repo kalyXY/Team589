@@ -10,7 +10,7 @@ ALTER TABLE `users`
     MODIFY COLUMN `username` varchar(100) NOT NULL,
     ADD COLUMN IF NOT EXISTS `email` varchar(150) NULL AFTER `username`,
     MODIFY COLUMN `password` varchar(255) NOT NULL,
-    MODIFY COLUMN `role` enum('admin','gestionnaire','caissier','utilisateur') NOT NULL DEFAULT 'utilisateur',
+    MODIFY COLUMN `role` enum('admin','gestionnaire','caissier','directeur','utilisateur') NOT NULL DEFAULT 'utilisateur',
     ADD COLUMN IF NOT EXISTS `created_at` timestamp NOT NULL DEFAULT current_timestamp() AFTER `role`;
 
 -- Étape 2: renseigner des emails uniques pour les enregistrements vides
@@ -42,6 +42,10 @@ CREATE UNIQUE INDEX IF NOT EXISTS `uniq_users_email` ON `users` (`email`);
 -- Ajouter utilisateur caissier de démo si absent
 INSERT IGNORE INTO `users` (`username`, `email`, `password`, `role`)
 VALUES ('caissier', 'caissier@scolaria.local', '$2y$10$hZqjKqZIfwWf9DqvFq4HPeE1iY2Gx1rK9rPVp3oXf7wq0sE4H3PlS', 'caissier');
+
+-- Ajouter utilisateur directeur de démo si absent
+INSERT IGNORE INTO `users` (`username`, `email`, `password`, `role`)
+VALUES ('directeur', 'directeur@scolaria.local', '$2y$10$hZqjKqZIfwWf9DqvFq4HPeE1iY2Gx1rK9rPVp3oXf7wq0sE4H3PlS', 'directeur');
 
 -- Mise à jour de la table depenses (ajouter colonnes manquantes)
 ALTER TABLE `depenses` 
@@ -132,7 +136,8 @@ ORDER BY `b`.`annee` DESC, `b`.`mois` DESC;
 -- Ajout des colonnes de prix
 ALTER TABLE `stocks`
     ADD COLUMN IF NOT EXISTS `prix_achat` DECIMAL(10,2) NOT NULL DEFAULT 0.00 AFTER `seuil`,
-    ADD COLUMN IF NOT EXISTS `prix_vente` DECIMAL(10,2) NOT NULL DEFAULT 0.00 AFTER `prix_achat`;
+    ADD COLUMN IF NOT EXISTS `prix_vente` DECIMAL(10,2) NOT NULL DEFAULT 0.00 AFTER `prix_achat`,
+    ADD COLUMN IF NOT EXISTS `code_barres` VARCHAR(64) NULL AFTER `prix_vente`;
 
 -- =============================
 -- Module POS (Sales)
@@ -156,4 +161,28 @@ CREATE TABLE IF NOT EXISTS `sales_items` (
   KEY `product_id` (`product_id`),
   CONSTRAINT `sales_items_ibfk_1` FOREIGN KEY (`sale_id`) REFERENCES `sales` (`id`) ON DELETE CASCADE,
   CONSTRAINT `sales_items_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `stocks` (`id`) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table transactions liée aux ventes (paiements)
+CREATE TABLE IF NOT EXISTS `transactions` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `sale_id` int(11) NOT NULL,
+  `mode_paiement` enum('cash','mobile_money','card','transfer') NOT NULL DEFAULT 'cash',
+  `montant` decimal(10,2) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `sale_id` (`sale_id`),
+  CONSTRAINT `transactions_ibfk_1` FOREIGN KEY (`sale_id`) REFERENCES `sales` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table alertes basique pour stock faible
+CREATE TABLE IF NOT EXISTS `alertes` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `article_id` int(11) NOT NULL,
+  `type` enum('faible','rupture') NOT NULL DEFAULT 'faible',
+  `message` varchar(255) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `article_id` (`article_id`),
+  CONSTRAINT `alertes_ibfk_1` FOREIGN KEY (`article_id`) REFERENCES `stocks` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

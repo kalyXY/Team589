@@ -322,31 +322,43 @@ ob_start();
 
 <!-- Statistiques -->
 <?php
+try {
+    $totalArticles = (int)($db->query('SELECT COUNT(*) AS c FROM stocks')->fetch(PDO::FETCH_ASSOC)['c'] ?? 0);
+    $lowStockCount = (int)($db->query('SELECT COUNT(*) AS c FROM stocks WHERE quantite <= seuil')->fetch(PDO::FETCH_ASSOC)['c'] ?? 0);
+    $categoryCount = (int)($db->query('SELECT COUNT(DISTINCT categorie) AS c FROM stocks')->fetch(PDO::FETCH_ASSOC)['c'] ?? 0);
+    $movementsCount = (int)($db->query('SELECT COUNT(*) AS c FROM mouvements')->fetch(PDO::FETCH_ASSOC)['c'] ?? 0);
+} catch (Throwable $e) {
+    $totalArticles = $totalArticles ?? 0;
+    $lowStockCount = $lowStockCount ?? 0;
+    $categoryCount = $categoryCount ?? 0;
+    $movementsCount = $movementsCount ?? 0;
+}
+
 $stockStats = [
     [
         'title' => 'Total Articles',
-        'value' => 0,
+        'value' => $totalArticles,
         'icon' => 'fas fa-boxes',
         'type' => 'primary',
         'subtitle' => 'Articles en stock'
     ],
     [
         'title' => 'Stocks Faibles',
-        'value' => 0,
+        'value' => $lowStockCount,
         'icon' => 'fas fa-exclamation-triangle',
         'type' => 'warning',
         'subtitle' => 'Nécessitent attention'
     ],
     [
         'title' => 'Catégories',
-        'value' => 0,
+        'value' => $categoryCount,
         'icon' => 'fas fa-tags',
         'type' => 'success',
         'subtitle' => 'Types d\'articles'
     ],
     [
         'title' => 'Mouvements',
-        'value' => 0,
+        'value' => $movementsCount,
         'icon' => 'fas fa-history',
         'type' => 'info',
         'subtitle' => 'Activité récente'
@@ -593,16 +605,12 @@ renderStatsGrid($stockStats);
     </div>
 </div>
 
-    <script src="assets/js/stocks.js"></script>
     <script>
-        // Initialisation au chargement de la page
-        document.addEventListener('DOMContentLoaded', function() {
-            // Les fonctions sont maintenant gérées par stocks.js
-        });correspondant
-            event.target.classList.add('active');
-        }
+        // Helpers modales
+        function openModal(id){ var el=document.getElementById(id); if(el){ el.style.display='block'; } }
+        function closeModal(id){ var el=document.getElementById(id); if(el){ el.style.display='none'; } }
 
-        // Gestion des modales
+        // Ouvrir formulaire d'ajout
         function openAddModal() {
             document.getElementById('modalTitle').innerHTML = '<i class="fas fa-plus-circle"></i> Ajouter un article';
             document.getElementById('formAction').value = 'add';
@@ -610,346 +618,83 @@ renderStatsGrid($stockStats);
             document.getElementById('submitBtn').className = 'btn btn-primary';
             document.getElementById('stockForm').reset();
             document.getElementById('stockId').value = '';
-            document.getElementById('stockModal').style.display = 'block';
-            
-            // Animation d'ouverture
-            setTimeout(() => {
-                document.querySelector('#stockModal .modal-content').style.transform = 'translateY(0) scale(1)';
-            }, 10);
+            openModal('stockModal');
         }
 
+        // Ouvrir formulaire d'édition
         function openEditModal(id) {
             fetch(`?ajax=get_stock&id=${id}`)
-                .then(response => response.json())
+                .then(r => r.json())
                 .then(data => {
+                    if (!data) return;
                     document.getElementById('modalTitle').innerHTML = '<i class="fas fa-edit"></i> Modifier l\'article';
                     document.getElementById('formAction').value = 'update';
                     document.getElementById('submitBtn').textContent = 'Modifier';
                     document.getElementById('submitBtn').className = 'btn btn-warning';
                     document.getElementById('stockId').value = data.id;
-                    document.getElementById('nom_article').value = data.nom_article;
-                    document.getElementById('categorie').value = data.categorie;
-                    document.getElementById('quantite').value = data.quantite;
-                    document.getElementById('seuil').value = data.seuil;
+                    document.getElementById('nom_article').value = data.nom_article || '';
+                    document.getElementById('categorie').value = data.categorie || '';
+                    document.getElementById('quantite').value = data.quantite || 0;
+                    document.getElementById('seuil').value = data.seuil || 1;
                     if (data.prix_achat) document.getElementById('prix_achat').value = data.prix_achat;
                     if (data.prix_vente) document.getElementById('prix_vente').value = data.prix_vente;
-                    document.getElementById('stockModal').style.display = 'block';
-                    
-                    // Animation d'ouverture
-                    setTimeout(() => {
-                        document.querySelector('#stockModal .modal-content').style.transform = 'translateY(0) scale(1)';
-                    }, 10);
+                    openModal('stockModal');
                 })
-                .catch(error => {
-                    console.error('Erreur:', error);
-                    showNotification('Erreur lors du chargement des données', 'error');
-                });
+                .catch(()=>{});
         }
 
-        function closeModal() {
-            document.getElementById('stockModal').style.display = 'none';
-        }
-
+        // Suppression
+        let deleteId = null;
         function confirmDelete(id, name) {
             deleteId = id;
             document.getElementById('deleteItemName').textContent = name;
-            document.getElementById('deleteModal').style.display = 'block';
+            openModal('deleteModal');
         }
-
-        function closeDeleteModal() {
-            document.getElementById('deleteModal').style.display = 'none';
-            deleteId = null;
-        }
-
         function executeDelete() {
-            if (deleteId) {
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.innerHTML = `
-                    <input type="hidden" name="action" value="delete">
-                    <input type="hidden" name="id" value="${deleteId}">
-                `;
-                document.body.appendChild(form);
-                form.submit();
-            }
+            if (!deleteId) return;
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.innerHTML = '<input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="'+deleteId+'">';
+            document.body.appendChild(form);
+            form.submit();
         }
 
-        // Validation du formulaire
-        document.getElementById('stockForm').addEventListener('submit', function(e) {
-            const quantite = parseInt(document.getElementById('quantite').value);
-            const seuil = parseInt(document.getElementById('seuil').value);
-            const prixAchat = parseFloat(document.getElementById('prix_achat').value);
-            const prixVente = parseFloat(document.getElementById('prix_vente').value);
-            
-            if (quantite < 0) {
+        // Validation formulaire
+        document.getElementById('stockForm').addEventListener('submit', function(e){
+            const q = parseInt(document.getElementById('quantite').value || '0', 10);
+            const s = parseInt(document.getElementById('seuil').value || '1', 10);
+            const pa = parseFloat(document.getElementById('prix_achat').value || '0');
+            const pv = parseFloat(document.getElementById('prix_vente').value || '0');
+            if (q < 0 || s < 1 || isNaN(pa) || pa < 0 || isNaN(pv) || pv < 0) {
                 e.preventDefault();
-                alert('La quantité doit être positive.');
-                return;
-            }
-            
-            if (seuil < 1) {
-                e.preventDefault();
-                alert('Le seuil doit être au moins de 1.');
-                return;
-            }
-
-            if (isNaN(prixAchat) || prixAchat < 0) {
-                e.preventDefault();
-                alert("Le prix d'achat doit être un nombre positif.");
-                return;
-            }
-
-            if (isNaN(prixVente) || prixVente < 0) {
-                e.preventDefault();
-                alert('Le prix de vente doit être un nombre positif.');
-                return;
+                alert('Vérifiez les champs: quantités >= 0, seuil >= 1, prix >= 0');
             }
         });
 
-        // Recherche et filtres en temps réel
-        function performSearch() {
+        // Recherche (reload serveur)
+        function performSearch(){
             const search = document.getElementById('searchInput').value;
             const category = document.getElementById('categoryFilter').value;
-            const lowStock = document.getElementById('lowStockFilter').checked ? '1' : '0';
-            
+            const lowStock = document.getElementById('lowStockFilter').checked;
             const params = new URLSearchParams();
             if (search) params.append('search', search);
             if (category) params.append('category', category);
-            if (lowStock === '1') params.append('low_stock', '1');
-            
-            fetch(`?ajax=search&${params.toString()}`)
-                .then(response => response.json())
-                .then(data => {
-                    updateTable(data);
-                })
-                .catch(error => {
-                    console.error('Erreur de recherche:', error);
-                });
+            if (lowStock) params.append('low_stock', '1');
+            window.location.search = params.toString();
         }
-
-        function updateTable(stocks) {
-            const tbody = document.querySelector('#stocksTable tbody');
-            tbody.innerHTML = '';
-            
-            stocks.forEach(stock => {
-                const isLowStock = stock.quantite <= stock.seuil;
-                const row = document.createElement('tr');
-                if (isLowStock) row.classList.add('low-stock');
-                
-                row.innerHTML = `
-                    <td>${stock.id}</td>
-                    <td>
-                        <strong>${stock.nom_article}</strong>
-                        ${isLowStock ? '<span class="alert-badge"><i class="fas fa-exclamation-triangle"></i> Stock faible</span>' : ''}
-                    </td>
-                    <td>${stock.categorie}</td>
-                    <td><span class="quantity ${isLowStock ? 'low' : ''}">${stock.quantite}</span></td>
-                    <td>${stock.seuil}</td>
-                    <td>${new Date(stock.created_at).toLocaleDateString('fr-FR')} ${new Date(stock.created_at).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}</td>
-                    <td class="actions">
-                        <button class="btn btn-edit" onclick="openEditModal(${stock.id})">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn btn-delete" onclick="confirmDelete(${stock.id}, '${stock.nom_article.replace(/'/g, "\\'")}')">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(row);
-            });
-        }
-
-        // Événements de recherche
-        let searchTimeout;
-        document.getElementById('searchInput').addEventListener('input', function() {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(performSearch, 300);
-        });
-
+        let __t;
+        document.getElementById('searchInput').addEventListener('input', function(){ clearTimeout(__t); __t = setTimeout(performSearch, 300); });
         document.getElementById('categoryFilter').addEventListener('change', performSearch);
         document.getElementById('lowStockFilter').addEventListener('change', performSearch);
 
-        // Fermer les modales en cliquant à l'extérieur
-        window.addEventListener('click', function(event) {
-            const stockModal = document.getElementById('stockModal');
-            const deleteModal = document.getElementById('deleteModal');
-            
-            if (event.target === stockModal) {
-                closeModal();
-            }
-            if (event.target === deleteModal) {
-                closeDeleteModal();
-            }
+        // Fermer modales en cliquant à l'extérieur
+        window.addEventListener('click', function(e){
+            const sm = document.getElementById('stockModal');
+            const dm = document.getElementById('deleteModal');
+            if (e.target === sm) closeModal('stockModal');
+            if (e.target === dm) closeModal('deleteModal');
         });
-
-        // Initialisation de l'application
-        document.addEventListener('DOMContentLoaded', function() {
-            // Mettre à jour les métriques au chargement
-            updateMetrics();
-            updateMovementsMetric();
-            
-            // Masquer les alertes automatiquement
-            setTimeout(function() {
-                const alerts = document.querySelectorAll('.alert');
-                alerts.forEach(alert => {
-<!-- JavaScript spécifique à la page -->
-<script>
-// Variables globales pour la compatibilité
-let deleteId = null;
-
-function pageInit() {
-    updateMetrics();
-    updateMovementsMetric();
-    
-    // Événements de recherche
-    const searchInput = document.getElementById('searchInput');
-    const categoryFilter = document.getElementById('categoryFilter');
-    const lowStockFilter = document.getElementById('lowStockFilter');
-    
-    if (searchInput) {
-        searchInput.addEventListener('input', performSearch);
-    }
-    if (categoryFilter) {
-        categoryFilter.addEventListener('change', performSearch);
-    }
-    if (lowStockFilter) {
-        lowStockFilter.addEventListener('change', performSearch);
-    }
-}
-
-function updateMetrics() {
-    const tableRows = document.querySelectorAll('#stocksTable tbody tr');
-    const totalArticles = tableRows.length;
-    let lowStockCount = 0;
-    const categories = new Set();
-    
-    tableRows.forEach(row => {
-        const cells = row.cells;
-        if (cells.length > 3) {
-            const quantity = parseInt(cells[3].textContent) || 0;
-            const threshold = parseInt(cells[4].textContent) || 0;
-            
-            if (quantity <= threshold) {
-                lowStockCount++;
-            }
-            
-            categories.add(cells[2].textContent.trim());
-        }
-    });
-    
-    // Mettre à jour les statistiques (si les éléments existent)
-    const stats = document.querySelectorAll('.stat-card .stat-value');
-    if (stats.length >= 3) {
-        stats[0].textContent = totalArticles;
-        stats[1].textContent = lowStockCount;
-        stats[2].textContent = categories.size;
-    }
-}
-
-function updateMovementsMetric() {
-    fetch('?ajax=count_movements')
-        .then(response => response.json())
-        .then(data => {
-            const stats = document.querySelectorAll('.stat-card .stat-value');
-            if (stats.length >= 4) {
-                stats[3].textContent = data.count || 0;
-            }
-        })
-        .catch(() => {
-            const simulatedCount = Math.floor(Math.random() * 50) + 10;
-            const stats = document.querySelectorAll('.stat-card .stat-value');
-            if (stats.length >= 4) {
-                stats[3].textContent = simulatedCount;
-            }
-        });
-}
-
-function showTab(tabName) {
-    // Masquer tous les onglets
-    document.querySelectorAll('.tab-content').forEach(tab => {
-        tab.style.display = 'none';
-    });
-    
-    // Réinitialiser les styles des boutons
-    document.querySelectorAll('#stocksTab, #historyTab').forEach(btn => {
-        btn.style.borderBottomColor = 'transparent';
-    });
-    
-    // Afficher l'onglet sélectionné
-    const targetTab = document.getElementById(tabName + '-tab');
-    if (targetTab) {
-        targetTab.style.display = 'block';
-    }
-    
-    // Activer le bouton correspondant
-    const activeButton = document.getElementById(tabName + 'Tab');
-    if (activeButton) {
-        activeButton.style.borderBottomColor = 'var(--primary-color)';
-    }
-}
-
-function performSearch() {
-    const search = document.getElementById('searchInput').value;
-    const category = document.getElementById('categoryFilter').value;
-    const lowStock = document.getElementById('lowStockFilter').checked;
-    
-    const params = new URLSearchParams();
-    if (search) params.append('search', search);
-    if (category) params.append('category', category);
-    if (lowStock) params.append('low_stock', '1');
-    
-    window.location.search = params.toString();
-}
-
-function openAddModal() {
-    document.getElementById('modalTitle').innerHTML = '<i class="fas fa-plus-circle"></i> Ajouter un article';
-    document.getElementById('formAction').value = 'add';
-    document.getElementById('submitBtn').innerHTML = '<i class="fas fa-save"></i> Ajouter';
-    document.getElementById('stockForm').reset();
-    openModal('stockModal');
-}
-
-function openEditModal(id) {
-    fetch(`?ajax=get_stock&id=${id}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data) {
-                document.getElementById('modalTitle').innerHTML = '<i class="fas fa-edit"></i> Modifier un article';
-                document.getElementById('formAction').value = 'update';
-                document.getElementById('stockId').value = data.id;
-                document.getElementById('nom_article').value = data.nom_article;
-                document.getElementById('categorie').value = data.categorie;
-                document.getElementById('quantite').value = data.quantite;
-                document.getElementById('seuil').value = data.seuil;
-                document.getElementById('submitBtn').innerHTML = '<i class="fas fa-save"></i> Modifier';
-                openModal('stockModal');
-            }
-        })
-        .catch(error => {
-            console.error('Erreur:', error);
-            showNotification('Erreur lors du chargement des données', 'error');
-        });
-}
-
-function confirmDelete(id, name) {
-    document.getElementById('deleteItemName').textContent = name;
-    deleteId = id;
-    openModal('deleteModal');
-}
-
-function executeDelete() {
-    if (deleteId) {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.innerHTML = `
-            <input type="hidden" name="action" value="delete">
-            <input type="hidden" name="id" value="${deleteId}">
-        `;
-        document.body.appendChild(form);
-        form.submit();
-    }
-}
-</script>
+    </script>
 
 <?php
 $content = ob_get_clean();

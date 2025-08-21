@@ -1,13 +1,14 @@
 <?php
 /**
  * Scolaria - POS (Point of Sale)
- * Vente directe des fournitures scolaires
+ * Vente directe des fournitures scolaires (connectée MySQL)
  */
 
 declare(strict_types=1);
 
 require_once __DIR__ . '/config/config.php';
 require_once __DIR__ . '/config/db.php';
+require_once __DIR__ . '/config/auth.php';
 
 // Session + contrôle d'accès
 session_set_cookie_params([
@@ -20,17 +21,7 @@ session_set_cookie_params([
 ]);
 session_start();
 
-if (empty($_SESSION['user_id']) || empty($_SESSION['role'])) {
-	header('Location: ' . BASE_URL . 'login.php');
-	exit;
-}
-
-$role = (string)($_SESSION['role'] ?? '');
-if (!in_array($role, ['admin', 'gestionnaire', 'caissier'], true)) {
-	header('HTTP/1.1 403 Forbidden');
-	echo 'Accès refusé';
-	exit;
-}
+require_roles(['admin','gestionnaire','caissier']);
 
 // Endpoints AJAX
 if (isset($_GET['ajax'])) {
@@ -40,16 +31,33 @@ if (isset($_GET['ajax'])) {
 	try {
 		if ($_GET['ajax'] === 'search') {
 			$q = trim((string)($_GET['q'] ?? ''));
-			$sql = 'SELECT id, nom_article, categorie, quantite, COALESCE(prix_vente, 0) AS prix_vente
+			if ($q === '') {
+				// Listing par défaut (50 premiers en stock)
+				$stmt = $pdo->query('SELECT id, nom_article, COALESCE(categorie, "") AS categorie, quantite, COALESCE(prix_vente, 0) AS prix_vente, COALESCE(code_barres, "") AS code_barres FROM stocks WHERE quantite > 0 ORDER BY nom_article ASC LIMIT 50');
+				$rows = $stmt->fetchAll() ?: [];
+				echo json_encode($rows);
+				exit;
+			}
+			// Recherche par code-barres exact ou LIKE nom/catégorie/code_barres
+			$sql = 'SELECT id, nom_article, COALESCE(categorie, "") AS categorie, quantite, COALESCE(prix_vente, 0) AS prix_vente, COALESCE(code_barres, "") AS code_barres
 					FROM stocks
-					WHERE quantite > 0 AND (nom_article LIKE :q OR categorie LIKE :q) 
+					WHERE quantite > 0 AND (
+						code_barres = :qexact OR nom_article LIKE :qlike OR categorie LIKE :qlike OR code_barres LIKE :qlike
+					)
 					ORDER BY nom_article ASC LIMIT 50';
 			$stmt = $pdo->prepare($sql);
+			$stmt->bindValue(':qexact', $q, PDO::PARAM_STR);
 			$like = '%' . $q . '%';
-			$stmt->bindValue(':q', $like, PDO::PARAM_STR);
+			$stmt->bindValue(':qlike', $like, PDO::PARAM_STR);
 			$stmt->execute();
 			$rows = $stmt->fetchAll() ?: [];
 			echo json_encode($rows);
+			exit;
+		}
+
+		if ($_GET['ajax'] === 'clients') {
+			$cl = $pdo->query('SELECT id, CONCAT(last_name, " ", first_name) AS name FROM clients ORDER BY last_name ASC, first_name ASC LIMIT 200')->fetchAll() ?: [];
+			echo json_encode($cl);
 			exit;
 		}
 
@@ -58,6 +66,10 @@ if (isset($_GET['ajax'])) {
 			$data = json_decode($raw, true);
 			$items = is_array($data['items'] ?? null) ? $data['items'] : [];
 			$clientId = isset($data['client_id']) && $data['client_id'] !== '' ? (int)$data['client_id'] : null;
+			$discountType = in_array(($data['discount_type'] ?? ''), ['percent','amount'], true) ? (string)$data['discount_type'] : null;
+			$discountValue = max(0.0, (float)($data['discount_value'] ?? 0));
+			$modePaiement = (string)($data['mode_paiement'] ?? 'cash'); // cash, mobile_money, card, transfer
+			$caissierId = (int)($_SESSION['user_id'] ?? 0);
 
 			if (empty($items)) {
 				echo json_encode(['ok' => false, 'error' => 'Panier vide']);
@@ -66,8 +78,8 @@ if (isset($_GET['ajax'])) {
 
 			$pdo->beginTransaction();
 			try {
-				$total = 0.0;
-				// Vérification et calcul du total
+				$subtotal = 0.0;
+				// Vérification et calcul du sous-total
 				foreach ($items as $it) {
 					$productId = (int)($it['product_id'] ?? 0);
 					$qty = max(1, (int)($it['quantity'] ?? 0));
@@ -76,7 +88,7 @@ if (isset($_GET['ajax'])) {
 						throw new RuntimeException('Données article invalides');
 					}
 					// Stock disponible
-					$st = $pdo->prepare('SELECT quantite, COALESCE(prix_vente,0) AS prix_vente FROM stocks WHERE id = ? FOR UPDATE');
+					$st = $pdo->prepare('SELECT quantite, COALESCE(prix_vente,0) AS prix_vente, COALESCE(seuil_alerte, 0) AS seuil_alerte FROM stocks WHERE id = ? FOR UPDATE');
 					$st->execute([$productId]);
 					$row = $st->fetch();
 					if (!$row) {
@@ -88,8 +100,16 @@ if (isset($_GET['ajax'])) {
 					if ($price <= 0) {
 						$price = (float)$row['prix_vente'];
 					}
-					$total += $price * $qty;
+					$subtotal += $price * $qty;
 				}
+
+				$discountAmount = 0.0;
+				if ($discountType === 'percent') {
+					$discountAmount = round($subtotal * min(100.0, $discountValue) / 100.0, 2);
+				} elseif ($discountType === 'amount') {
+					$discountAmount = min($subtotal, $discountValue);
+				}
+				$total = max(0.0, $subtotal - $discountAmount);
 
 				// Insérer la vente (sales)
 				$insSale = $pdo->prepare('INSERT INTO sales (client_id, total) VALUES (:client_id, :total)');
@@ -98,22 +118,31 @@ if (isset($_GET['ajax'])) {
 				$insSale->execute();
 				$saleId = (int)$pdo->lastInsertId();
 
-				// Insérer les items + décrémenter le stock
+				// Insérer les items + décrémenter le stock + alertes faibles
 				$insItem = $pdo->prepare('INSERT INTO sales_items (sale_id, product_id, quantity, price) VALUES (?, ?, ?, ?)');
 				$decStock = $pdo->prepare('UPDATE stocks SET quantite = quantite - ? WHERE id = ?');
+				$selStock = $pdo->prepare('SELECT quantite, COALESCE(seuil_alerte, 0) AS seuil_alerte FROM stocks WHERE id = ?');
+				$insAlerte = $pdo->prepare('INSERT INTO alertes (stock_id, type, message) VALUES (?, ?, ?)');
 				foreach ($items as $it) {
 					$productId = (int)$it['product_id'];
 					$qty = max(1, (int)$it['quantity']);
 					$price = (float)$it['price'];
 					$insItem->execute([$saleId, $productId, $qty, $price]);
 					$decStock->execute([$qty, $productId]);
-					// Mouvement stock
-					$mv = $pdo->prepare('INSERT INTO mouvements (article_id, action, details, utilisateur) VALUES (?, ?, ?, ?)');
-					$mv->execute([$productId, 'modification', 'Vente POS (-'.$qty.')', (string)($_SESSION['username'] ?? 'system')]);
+					$selStock->execute([$productId]);
+					$strow = $selStock->fetch();
+					if ($strow && (int)$strow['quantite'] <= (int)$strow['seuil_alerte']) {
+						$type = ((int)$strow['quantite'] <= 0) ? 'out_of_stock' : 'low_stock';
+						$insAlerte->execute([$productId, $type, 'Stock ' . $type . ' après vente POS']);
+					}
 				}
 
+				// Enregistrer la transaction (paiement)
+				$insTxn = $pdo->prepare('INSERT INTO transactions (sale_id, payment_method, amount) VALUES (?, ?, ?)');
+				$insTxn->execute([$saleId, $modePaiement, $total]);
+
 				$pdo->commit();
-				echo json_encode(['ok' => true, 'sale_id' => $saleId, 'total' => $total]);
+				echo json_encode(['ok' => true, 'sale_id' => $saleId, 'total' => $total, 'invoice_url' => ('invoice.php?id=' . $saleId)]);
 				exit;
 			} catch (Throwable $e) {
 				if ($pdo->inTransaction()) { $pdo->rollBack(); }
@@ -146,7 +175,7 @@ ob_start();
 <div class="pos-container">
 	<div class="pos-left">
 		<div class="pos-search">
-			<input type="text" id="searchInput" class="pos-input" placeholder="Rechercher un article (nom, catégorie)">
+			<input type="text" id="searchInput" class="pos-input" placeholder="Rechercher (code-barres, nom, catégorie)">
 		</div>
 		<div id="productsList" class="pos-products"></div>
 	</div>
@@ -154,6 +183,36 @@ ob_start();
 		<div class="pos-cart">
 			<h3 class="pos-cart-title"><i class="fas fa-shopping-cart"></i> Panier</h3>
 			<div id="cartItems" class="pos-cart-items"></div>
+
+			<div class="pos-controls">
+				<div class="control-row">
+					<label>Remise</label>
+					<div style="display:flex; gap:6px; align-items:center;">
+						<select id="discountType" class="form-control" style="max-width:130px">
+							<option value="none">Aucune</option>
+							<option value="percent">%</option>
+							<option value="amount">Montant</option>
+						</select>
+						<input type="number" id="discountValue" class="form-control" min="0" step="0.01" placeholder="0">
+					</div>
+				</div>
+				<div class="control-row">
+					<label>Mode de paiement</label>
+					<select id="paymentMode" class="form-control">
+						<option value="cash">Espèces</option>
+						<option value="mobile_money">Mobile Money</option>
+						<option value="card">Carte</option>
+						<option value="transfer">Virement</option>
+					</select>
+				</div>
+				<div class="control-row">
+					<label>Client</label>
+					<select id="clientSelect" class="form-control">
+						<option value="">Client par défaut</option>
+					</select>
+				</div>
+			</div>
+
 			<div class="pos-cart-footer">
 				<div class="pos-total-row">
 					<span>Total</span>
@@ -175,30 +234,48 @@ function formatPrice(value) { return (parseFloat(value || 0)).toFixed(2) + ' €
 function renderProducts() {
 	const list = document.getElementById('productsList');
 	list.innerHTML = '';
+	if (products.length === 0) {
+		list.innerHTML = '<div class="pos-empty">Aucun article trouvé.</div>';
+		return;
+	}
 	products.forEach(p => {
 		const item = document.createElement('div');
 		item.className = 'pos-product';
+		const disabled = (parseInt(p.quantite||0) <= 0);
 		item.innerHTML = `
 			<div class="pos-product-info">
 				<div class="pos-product-name">${p.nom_article}</div>
-				<div class="pos-product-meta">Catégorie: ${p.categorie || '-'} • Stock: ${p.quantite}</div>
+				<div class="pos-product-meta">Catégorie: ${p.categorie || '-'} • Stock: ${p.quantite} ${p.code_barres ? '• CB: '+p.code_barres : ''}</div>
 			</div>
 			<div class="pos-product-actions">
 				<div class="pos-product-price">${formatPrice(p.prix_vente)}</div>
-				<button class="btn btn-sm btn-primary" onclick="addToCart(${p.id}, '${p.nom_article.replace(/'/g, "\\'")}', ${p.prix_vente}, ${p.quantite})">Ajouter</button>
+				<button class="btn btn-sm btn-primary" ${disabled?'disabled':''} onclick="addToCart(${p.id}, '${p.nom_article.replace(/'/g, "\\'")}', ${p.prix_vente}, ${p.quantite})">Ajouter</button>
 			</div>
 		`;
 		list.appendChild(item);
 	});
 }
 
+function computeSubtotal() {
+	return cart.reduce((acc,c)=> acc + (c.price * c.quantity), 0);
+}
+
+function updateTotal() {
+	const subtotal = computeSubtotal();
+	const type = document.getElementById('discountType').value;
+	const val = parseFloat(document.getElementById('discountValue').value || '0');
+	let discount = 0;
+	if (type === 'percent') discount = subtotal * Math.min(100, Math.max(0, val)) / 100;
+	if (type === 'amount') discount = Math.min(subtotal, Math.max(0, val));
+	const total = Math.max(0, subtotal - discount);
+	document.getElementById('cartTotal').textContent = formatPrice(total);
+}
+
 function renderCart() {
 	const list = document.getElementById('cartItems');
 	list.innerHTML = '';
-	let total = 0;
 	cart.forEach((c, idx) => {
 		const lineTotal = c.price * c.quantity;
-		total += lineTotal;
 		const row = document.createElement('div');
 		row.className = 'pos-cart-item';
 		row.innerHTML = `
@@ -215,7 +292,7 @@ function renderCart() {
 		`;
 		list.appendChild(row);
 	});
-	document.getElementById('cartTotal').textContent = formatPrice(total);
+	updateTotal();
 }
 
 function addToCart(id, name, price, stock) {
@@ -240,19 +317,34 @@ async function searchProducts() {
 	renderProducts();
 }
 
+async function loadClients() {
+	const res = await fetch('pos.php?ajax=clients');
+	const data = await res.json();
+	const sel = document.getElementById('clientSelect');
+	(data||[]).forEach(c => {
+		const opt = document.createElement('option'); opt.value = c.id; opt.textContent = c.name; sel.appendChild(opt);
+	});
+}
+
 async function checkout() {
 	if (cart.length === 0) { showMsg('Panier vide', 'error'); return; }
 	// Vérifier les quantités
-	for (const it of cart) {
-		if (it.quantity > it.max) { showMsg(`Stock insuffisant pour ${it.name}`, 'error'); return; }
-	}
+	for (const it of cart) { if (it.quantity > it.max) { showMsg(`Stock insuffisant pour ${it.name}`, 'error'); return; } }
 	const btn = document.getElementById('checkoutBtn');
 	btn.disabled = true; btn.classList.add('loading');
 	try {
-		const res = await fetch('pos.php?ajax=checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items: cart }) });
+		const payload = {
+			items: cart,
+			client_id: document.getElementById('clientSelect').value,
+			discount_type: (document.getElementById('discountType').value === 'none' ? null : document.getElementById('discountType').value),
+			discount_value: parseFloat(document.getElementById('discountValue').value || '0'),
+			mode_paiement: document.getElementById('paymentMode').value
+		};
+		const res = await fetch('pos.php?ajax=checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
 		const data = await res.json();
 		if (!data.ok) { throw new Error(data.error || 'Erreur inconnue'); }
 		showMsg(`Vente validée. Ticket #${data.sale_id} - Total ${formatPrice(data.total)}`, 'success');
+		if (data.invoice_url) { window.open(data.invoice_url, '_blank'); }
 		cart = []; renderCart(); searchProducts();
 	} catch (e) {
 		showMsg(e.message || 'Erreur lors de la validation', 'error');
@@ -261,15 +353,14 @@ async function checkout() {
 	}
 }
 
-function showMsg(text, type) {
-	const el = document.getElementById('checkoutMsg');
-	el.textContent = text;
-	el.className = 'pos-message ' + (type || 'info');
-}
+function showMsg(text, type) { const el = document.getElementById('checkoutMsg'); el.textContent = text; el.className = 'pos-message ' + (type || 'info'); }
 
 document.addEventListener('DOMContentLoaded', () => {
-	document.getElementById('searchInput').addEventListener('input', () => { clearTimeout(window.__t); window.__t = setTimeout(searchProducts, 300); });
+	document.getElementById('searchInput').addEventListener('input', () => { clearTimeout(window.__t); window.__t = setTimeout(searchProducts, 250); });
 	document.getElementById('checkoutBtn').addEventListener('click', checkout);
+	document.getElementById('discountType').addEventListener('change', updateTotal);
+	document.getElementById('discountValue').addEventListener('input', updateTotal);
+	loadClients();
 	searchProducts();
 });
 </script>

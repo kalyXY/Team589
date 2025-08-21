@@ -54,74 +54,7 @@ $additionalJS = $additionalJS ?? [];
                 
                 <!-- Navigation -->
                 <nav class="sidebar-nav">
-                    <!-- Section Principale -->
-                    <div class="nav-section">
-                        <div class="nav-section-title">Principal</div>
-                        <div class="nav-item">
-                            <a href="dashboard.php" class="nav-link <?php echo $currentPage === 'dashboard' ? 'active' : ''; ?>">
-                                <div class="nav-icon"><i class="fas fa-tachometer-alt"></i></div>
-                                <div class="nav-text">Tableau de bord</div>
-                            </a>
-                        </div>
-                        <div class="nav-item">
-                            <a href="stocks.php" class="nav-link <?php echo $currentPage === 'stocks' ? 'active' : ''; ?>">
-                                <div class="nav-icon"><i class="fas fa-boxes"></i></div>
-                                <div class="nav-text">Gestion des stocks</div>
-                            </a>
-                        </div>
-                        <div class="nav-item">
-                            <a href="alerts.php" class="nav-link <?php echo $currentPage === 'alerts' ? 'active' : ''; ?>">
-                                <div class="nav-icon"><i class="fas fa-exclamation-triangle"></i></div>
-                                <div class="nav-text">Alertes & Réappro</div>
-                            </a>
-                        </div>
-                    </div>
-                    
-                    <!-- Section Gestion -->
-                    <div class="nav-section">
-                        <div class="nav-section-title">Gestion</div>
-                        <div class="nav-item">
-                            <a href="finances.php" class="nav-link <?php echo $currentPage === 'finances' ? 'active' : ''; ?>">
-                                <div class="nav-icon"><i class="fas fa-euro-sign"></i></div>
-                                <div class="nav-text">Finances</div>
-                            </a>
-                        </div>
-                        <div class="nav-item">
-                            <a href="resources.php" class="nav-link <?php echo $currentPage === 'resources' ? 'active' : ''; ?>">
-                                <div class="nav-icon"><i class="fas fa-archive"></i></div>
-                                <div class="nav-text">Ressources</div>
-                            </a>
-                        </div>
-                        <div class="nav-item">
-                            <a href="users.php" class="nav-link <?php echo $currentPage === 'users' ? 'active' : ''; ?>">
-                                <div class="nav-icon"><i class="fas fa-users"></i></div>
-                                <div class="nav-text">Utilisateurs</div>
-                            </a>
-                        </div>
-                    </div>
-                    
-                    <!-- Section Système -->
-                    <div class="nav-section">
-                        <div class="nav-section-title">Système</div>
-                        <div class="nav-item">
-                            <a href="settings.php" class="nav-link <?php echo $currentPage === 'settings' ? 'active' : ''; ?>">
-                                <div class="nav-icon"><i class="fas fa-cog"></i></div>
-                                <div class="nav-text">Paramètres</div>
-                            </a>
-                        </div>
-                        <div class="nav-item">
-                            <a href="reports.php" class="nav-link <?php echo $currentPage === 'reports' ? 'active' : ''; ?>">
-                                <div class="nav-icon"><i class="fas fa-chart-bar"></i></div>
-                                <div class="nav-text">Rapports</div>
-                            </a>
-                        </div>
-                        <div class="nav-item">
-                            <a href="logout.php" class="nav-link">
-                                <div class="nav-icon"><i class="fas fa-sign-out-alt"></i></div>
-                                <div class="nav-text">Déconnexion</div>
-                            </a>
-                        </div>
-                    </div>
+                    <?php include __DIR__ . '/../partials/menu.php'; ?>
                 </nav>
             </aside>
         <?php endif; ?>
