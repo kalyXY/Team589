@@ -185,8 +185,7 @@ $tableConfig = [
             'key' => 'item',
             'label' => 'Article',
             'sortable' => true,
-            'type' => 'link',
-            'linkUrl' => '/stocks/view/{id}'
+            'type' => 'text'
         ],
         [
             'key' => 'quantity',
@@ -217,13 +216,7 @@ $tableConfig = [
             'icon' => 'fas fa-eye',
             'class' => 'view',
             'title' => 'Voir les détails',
-            'url' => '/activity/view/{id}'
-        ],
-        [
-            'icon' => 'fas fa-edit',
-            'class' => 'edit',
-            'title' => 'Modifier',
-            'url' => '/activity/edit/{id}'
+            'url' => '/stocks.php'
         ]
     ],
     'data' => $recentActivities
