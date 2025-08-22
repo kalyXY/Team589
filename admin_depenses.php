@@ -521,17 +521,19 @@ ob_start();
                     <div class="stat-content">
                         <h3 id="totalDepenses">0.00 €</h3>
                         <p>Total Dépenses</p>
+                        <small class="text-muted">Toutes les dépenses confondues</small>
                     </div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="stat-card">
                     <div class="stat-icon">
-                        <i class="fas fa-calendar"></i>
+                        <i class="fas fa-calendar-alt"></i>
                     </div>
                     <div class="stat-content">
                         <h3 id="depensesMois">0.00 €</h3>
                         <p>Ce mois</p>
+                        <small class="text-muted">Dépenses du mois en cours</small>
                     </div>
                 </div>
             </div>
@@ -543,17 +545,19 @@ ob_start();
                     <div class="stat-content">
                         <h3 id="depensesAnnee">0.00 €</h3>
                         <p>Cette année</p>
+                        <small class="text-muted">Dépenses de l'année en cours</small>
                     </div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="stat-card">
                     <div class="stat-icon">
-                        <i class="fas fa-list"></i>
+                        <i class="fas fa-receipt"></i>
                     </div>
                     <div class="stat-content">
                         <h3 id="nombreDepenses">0</h3>
                         <p>Nombre total</p>
+                        <small class="text-muted">Nombre de dépenses enregistrées</small>
                     </div>
                 </div>
             </div>
@@ -562,24 +566,33 @@ ob_start();
 
     <!-- Tableau des dépenses -->
     <div class="admin-table-container">
-        <table class="table table-striped table-hover" id="depensesTable">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Date</th>
-                    <th>Description</th>
-                    <th>Montant</th>
-                    <th>Catégorie</th>
-                    <th>Fournisseur</th>
-                    <th>Facture</th>
-                    <th>Créé par</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody id="depensesTableBody">
-                <!-- Les données seront chargées via JavaScript -->
-            </tbody>
-        </table>
+        <div class="table-header">
+            <h4><i class="fas fa-table"></i> Liste des Dépenses</h4>
+            <div class="table-info">
+                <span id="tableInfo">Chargement...</span>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-striped table-hover" id="depensesTable">
+                <thead>
+                    <tr>
+                        <th><i class="fas fa-hashtag"></i> ID</th>
+                        <th><i class="fas fa-calendar"></i> Date</th>
+                        <th><i class="fas fa-file-alt"></i> Description</th>
+                        <th><i class="fas fa-euro-sign"></i> Montant</th>
+                        <th><i class="fas fa-tags"></i> Catégorie</th>
+                        <th><i class="fas fa-building"></i> Fournisseur</th>
+                        <th><i class="fas fa-receipt"></i> Facture</th>
+                        <th><i class="fas fa-user"></i> Créé par</th>
+                        <th><i class="fas fa-cogs"></i> Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="depensesTableBody">
+                    <!-- Les données seront chargées via JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
         
         <!-- Pagination -->
         <div class="pagination-container">
@@ -594,10 +607,12 @@ ob_start();
 
 <!-- Modal Ajout/Modification Dépense -->
 <div class="modal fade" id="depenseModal" tabindex="-1" aria-labelledby="depenseModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="depenseModalLabel">Nouvelle Dépense</h5>
+                <h5 class="modal-title" id="depenseModalLabel">
+                    <i class="fas fa-plus-circle me-2"></i>Nouvelle Dépense
+                </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form id="depenseForm">
@@ -607,14 +622,20 @@ ob_start();
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="description" class="form-label">Description *</label>
-                                <input type="text" class="form-control" id="description" name="description" required>
+                                <label for="description" class="form-label">
+                                    <i class="fas fa-file-alt text-primary"></i> Description *
+                                </label>
+                                <input type="text" class="form-control" id="description" name="description" 
+                                       placeholder="Ex: Achat fournitures de bureau" required>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="montant" class="form-label">Montant (€) *</label>
-                                <input type="number" class="form-control" id="montant" name="montant" step="0.01" min="0" required>
+                                <label for="montant" class="form-label">
+                                    <i class="fas fa-euro-sign text-success"></i> Montant (€) *
+                                </label>
+                                <input type="number" class="form-control" id="montant" name="montant" 
+                                       step="0.01" min="0" placeholder="0.00" required>
                             </div>
                         </div>
                     </div>
@@ -622,15 +643,19 @@ ob_start();
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="date" class="form-label">Date *</label>
+                                <label for="date" class="form-label">
+                                    <i class="fas fa-calendar text-info"></i> Date *
+                                </label>
                                 <input type="date" class="form-control" id="date" name="date" required>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="categorie" class="form-label">Catégorie</label>
+                                <label for="categorie" class="form-label">
+                                    <i class="fas fa-tags text-warning"></i> Catégorie
+                                </label>
                                 <select class="form-control" id="categorie" name="categorie">
-                                    <option value="">Sélectionner...</option>
+                                    <option value="">Sélectionner une catégorie...</option>
                                     <?php
                                     try {
                                         $pdo = Database::getConnection();
@@ -654,26 +679,39 @@ ob_start();
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="fournisseur" class="form-label">Fournisseur</label>
-                                <input type="text" class="form-control" id="fournisseur" name="fournisseur">
+                                <label for="fournisseur" class="form-label">
+                                    <i class="fas fa-building text-info"></i> Fournisseur
+                                </label>
+                                <input type="text" class="form-control" id="fournisseur" name="fournisseur" 
+                                       placeholder="Nom du fournisseur">
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="facture_numero" class="form-label">N° Facture</label>
-                                <input type="text" class="form-control" id="facture_numero" name="facture_numero">
+                                <label for="facture_numero" class="form-label">
+                                    <i class="fas fa-receipt text-success"></i> N° Facture
+                                </label>
+                                <input type="text" class="form-control" id="facture_numero" name="facture_numero" 
+                                       placeholder="Numéro de facture">
                             </div>
                         </div>
                     </div>
                     
                     <div class="mb-3">
-                        <label for="notes" class="form-label">Notes</label>
-                        <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                        <label for="notes" class="form-label">
+                            <i class="fas fa-sticky-note text-warning"></i> Notes
+                        </label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3" 
+                                  placeholder="Informations supplémentaires..."></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                    <button type="submit" class="btn btn-primary" id="saveBtn">Enregistrer</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i> Annuler
+                    </button>
+                    <button type="submit" class="btn btn-primary" id="saveBtn">
+                        <i class="fas fa-save"></i> Enregistrer
+                    </button>
                 </div>
             </form>
         </div>
@@ -682,20 +720,41 @@ ob_start();
 
 <!-- Modal Confirmation Suppression -->
 <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="deleteModalLabel">Confirmer la suppression</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Confirmer la suppression
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
-                <p>Êtes-vous sûr de vouloir supprimer cette dépense ?</p>
-                <p><strong>Description:</strong> <span id="deleteDescription"></span></p>
-                <p><strong>Montant:</strong> <span id="deleteMontant"></span></p>
+            <div class="modal-body text-center">
+                <div class="mb-4">
+                    <i class="fas fa-trash-alt fa-3x text-danger mb-3"></i>
+                    <h5>Êtes-vous sûr de vouloir supprimer cette dépense ?</h5>
+                    <p class="text-muted">Cette action est irréversible.</p>
+                </div>
+                
+                <div class="alert alert-warning">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong><i class="fas fa-file-alt"></i> Description:</strong><br>
+                            <span id="deleteDescription" class="text-dark"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong><i class="fas fa-euro-sign"></i> Montant:</strong><br>
+                            <span id="deleteMontant" class="text-danger fw-bold"></span>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                <button type="button" class="btn btn-danger" id="confirmDelete">Supprimer</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Annuler
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmDelete">
+                    <i class="fas fa-trash"></i> Supprimer définitivement
+                </button>
             </div>
         </div>
     </div>

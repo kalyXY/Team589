@@ -104,10 +104,30 @@ async function loadStats() {
 // Rendre le tableau
 function renderTable() {
     const tbody = document.getElementById('depensesTableBody');
+    const tableInfo = document.getElementById('tableInfo');
     tbody.innerHTML = '';
     
+    // Mettre à jour les informations du tableau
+    if (totalItems > 0) {
+        const start = (currentPage - 1) * itemsPerPage + 1;
+        const end = Math.min(currentPage * itemsPerPage, totalItems);
+        tableInfo.textContent = `Affichage ${start}-${end} sur ${totalItems} dépenses`;
+    } else {
+        tableInfo.textContent = 'Aucune dépense trouvée';
+    }
+    
     if (depenses.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" class="text-center">Aucune dépense trouvée</td></tr>';
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="9" class="text-center py-4">
+                    <div class="empty-state">
+                        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Aucune dépense trouvée</h5>
+                        <p class="text-muted">Essayez de modifier vos filtres ou ajoutez une nouvelle dépense.</p>
+                    </div>
+                </td>
+            </tr>
+        `;
         return;
     }
     
@@ -118,23 +138,34 @@ function renderTable() {
         const editBtn = document.createElement('button');
         editBtn.className = 'btn btn-sm btn-primary me-1';
         editBtn.innerHTML = '<i class="fas fa-edit"></i>';
+        editBtn.title = 'Modifier cette dépense';
         editBtn.onclick = () => editDepense(depense.id);
         
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'btn btn-sm btn-danger';
         deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
+        deleteBtn.title = 'Supprimer cette dépense';
         deleteBtn.onclick = () => deleteDepense(depense.id, depense.description, depense.montant);
         
+        // Créer un badge pour la catégorie
+        const categoryBadge = depense.categorie_nom ? 
+            `<span class="badge bg-info">${escapeHtml(depense.categorie_nom)}</span>` : 
+            '<span class="text-muted">-</span>';
+        
+        // Formater le montant avec une couleur
+        const amountClass = parseFloat(depense.montant) > 1000 ? 'text-danger' : 
+                           parseFloat(depense.montant) > 500 ? 'text-warning' : 'text-success';
+        
         row.innerHTML = `
-            <td>${depense.id}</td>
-            <td>${formatDate(depense.date)}</td>
-            <td>${escapeHtml(depense.description)}</td>
-            <td class="text-end">${formatCurrency(depense.montant)}</td>
-            <td>${escapeHtml(depense.categorie_nom || '-')}</td>
-            <td>${escapeHtml(depense.fournisseur || '-')}</td>
-            <td>${escapeHtml(depense.facture_numero || '-')}</td>
-            <td>${escapeHtml(depense.created_by || '-')}</td>
-            <td></td>
+            <td><span class="badge bg-secondary">#${depense.id}</span></td>
+            <td><i class="fas fa-calendar text-primary"></i> ${formatDate(depense.date)}</td>
+            <td><strong>${escapeHtml(depense.description)}</strong></td>
+            <td class="text-end ${amountClass}"><strong>${formatCurrency(depense.montant)}</strong></td>
+            <td>${categoryBadge}</td>
+            <td>${depense.fournisseur ? `<i class="fas fa-building text-info"></i> ${escapeHtml(depense.fournisseur)}` : '<span class="text-muted">-</span>'}</td>
+            <td>${depense.facture_numero ? `<i class="fas fa-receipt text-success"></i> ${escapeHtml(depense.facture_numero)}` : '<span class="text-muted">-</span>'}</td>
+            <td><i class="fas fa-user text-primary"></i> ${escapeHtml(depense.created_by || 'Système')}</td>
+            <td class="text-center"></td>
         `;
         
         // Ajouter les boutons dans la dernière cellule

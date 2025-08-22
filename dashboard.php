@@ -379,12 +379,12 @@ try {
 // Ajouter la tuile "Ventes du jour"
 $dashboardStats[] = [
     'title' => 'Ventes du jour',
-    'value' => number_format(0, 0, ',', ' '),
+    'value' => number_format($todaySalesCount, 0, ',', ' '),
     'icon' => 'fas fa-cash-register',
     'type' => 'success',
     'change' => '',
     'changeType' => 'positive',
-    'subtitle' => 'Montant: €' . number_format(0, 0, ',', ' '),
+    'subtitle' => 'Montant: €' . number_format($todaySalesAmount, 2, ',', ' '),
     'link' => '/pos.php'
 ];
 

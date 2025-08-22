@@ -31,6 +31,9 @@ $additionalJS = $additionalJS ?? [];
     <!-- CSS Notifications -->
     <link rel="stylesheet" href="assets/css/notifications.css">
     
+    <!-- CSS Header Notifications -->
+    <link rel="stylesheet" href="assets/css/header-notifications.css">
+    
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -88,13 +91,14 @@ $additionalJS = $additionalJS ?? [];
                     </button>
                     
                     <!-- Menu Utilisateur -->
+                    <?php include __DIR__ . '/../includes/user_header.php'; ?>
                     <div class="user-menu" data-tooltip="Menu utilisateur">
                         <div class="user-avatar">
-                            <?php echo strtoupper(substr($_SESSION['username'] ?? 'U', 0, 1)); ?>
+                            <?php echo generateAvatar($userProfile); ?>
                         </div>
                         <div class="user-info">
-                            <div class="user-name"><?php echo htmlspecialchars($_SESSION['username'] ?? 'Utilisateur'); ?></div>
-                            <div class="user-role"><?php echo htmlspecialchars($_SESSION['role'] ?? 'Utilisateur'); ?></div>
+                            <div class="user-name"><?php echo htmlspecialchars($userProfile['full_name']); ?></div>
+                            <div class="user-role"><?php echo htmlspecialchars($userProfile['role']); ?></div>
                         </div>
                     </div>
                 </div>
@@ -122,6 +126,9 @@ $additionalJS = $additionalJS ?? [];
     
     <!-- JavaScript Notifications -->
     <script src="assets/js/notifications.js"></script>
+    
+    <!-- JavaScript Header Notifications -->
+    <script src="assets/js/header-notifications.js"></script>
     
     <!-- JavaScript Additionnels -->
     <?php foreach ($additionalJS as $js): ?>
