@@ -22,6 +22,60 @@ function renderDataTable($config) {
     $itemsPerPage = $config['itemsPerPage'] ?? 10;
     
     echo '<div class="table-container" id="' . $id . 'Container">';
+    echo '<style>
+    .table-actions {
+        display: flex !important;
+        gap: var(--spacing-xs) !important;
+        justify-content: center !important;
+        align-items: center !important;
+    }
+    .action-btn {
+        cursor: pointer !important;
+        pointer-events: auto !important;
+        opacity: 1 !important;
+        transition: all 0.2s ease !important;
+        border: 1px solid var(--border-color) !important;
+        background: var(--bg-secondary) !important;
+        color: var(--text-primary) !important;
+        padding: 0.5rem !important;
+        border-radius: var(--radius-sm) !important;
+        text-decoration: none !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        min-width: 2rem !important;
+        height: 2rem !important;
+    }
+    .action-btn:hover {
+        background: var(--primary-color) !important;
+        color: white !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+    }
+    .action-btn.btn-warning {
+        background: var(--warning-color) !important;
+        color: white !important;
+    }
+    .action-btn.btn-danger {
+        background: var(--danger-color) !important;
+        color: white !important;
+    }
+    .action-btn.btn-outline {
+        background: transparent !important;
+        border-color: var(--border-color) !important;
+        color: var(--text-primary) !important;
+    }
+    .action-btn.btn-outline:hover {
+        background: var(--primary-color) !important;
+        border-color: var(--primary-color) !important;
+        color: white !important;
+    }
+    .table-actions button,
+    .table-actions a {
+        pointer-events: auto !important;
+        cursor: pointer !important;
+    }
+    </style>';
     
     // Header du tableau
     if ($title || $search || $export) {
@@ -128,9 +182,17 @@ function renderDataTable($config) {
                         $url = str_replace('{' . $k . '}', $v, $url);
                     }
                     
-                    echo '<a href="' . htmlspecialchars($url) . '" class="btn btn-sm ' . $class . '" title="' . $title . '">';
-                    echo '<i class="' . $icon . '"></i>';
-                    echo '</a>';
+                    // Si l'URL est un javascript:..., rendre un bouton avec onclick pour fiabilité
+                    if (strpos($url, 'javascript:') === 0) {
+                        $onclick = substr($url, strlen('javascript:'));
+                        echo '<button type="button" class="btn btn-sm ' . $class . ' action-btn" title="' . $title . '" onclick="' . htmlspecialchars($onclick, ENT_QUOTES) . '" style="cursor: pointer; pointer-events: auto;">';
+                        echo '<i class="' . $icon . '"></i>';
+                        echo '</button>';
+                    } else {
+                        echo '<a href="' . htmlspecialchars($url) . '" class="btn btn-sm ' . $class . ' action-btn" title="' . $title . '" style="cursor: pointer; pointer-events: auto;">';
+                        echo '<i class="' . $icon . '"></i>';
+                        echo '</a>';
+                    }
                 }
                 echo '</div>';
                 echo '</td>';

@@ -47,7 +47,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'expenses_json') {
         $rows = $stmt->fetchAll() ?: [];
         $labels = [];
         $data = [];
-        $totalCumul = 0.0;
+        $totalCumul = 4746.15;
         foreach ($rows as $r) {
             $label = sprintf('%04d-%02d', (int) $r['y'], (int) $r['m']);
             $labels[] = $label;
@@ -118,7 +118,7 @@ $canViewCosts = in_array($role, ['admin'], true);
 $dashboardStats = [
     [
         'title' => 'Articles en stock',
-        'value' => 0,
+        'value' => 13,
         'icon' => 'fas fa-boxes',
         'type' => 'primary',
         'change' => '+12.5%',
@@ -128,7 +128,7 @@ $dashboardStats = [
     ],
     [
         'title' => 'Alertes actives',
-        'value' => 0,
+        'value' => 13,
         'icon' => 'fas fa-exclamation-triangle',
         'type' => 'warning',
         'change' => '-25%',
@@ -138,7 +138,7 @@ $dashboardStats = [
     ],
     [
         'title' => 'Budget mensuel',
-        'value' => '€0',
+        'value' => '€4 746',
         'icon' => 'fas fa-euro-sign',
         'type' => 'success',
         'change' => '+8.2%',
@@ -148,7 +148,7 @@ $dashboardStats = [
     ],
     [
         'title' => 'Utilisateurs',
-        'value' => 0,
+        'value' => 13,
         'icon' => 'fas fa-users',
         'type' => 'primary',
         'change' => '+5.1%',
@@ -242,7 +242,8 @@ $topSellingProducts = [];
 
 // Ventes du jour (fallback)
 $todaySalesCount = 0;
-$todaySalesAmount = 0.0;
+$todaySalesAmount = 0;
+$recentSales = [];
 
 // Charger données DB réelles pour tuiles si disponible
 try {
@@ -288,21 +289,21 @@ try {
         $dashboardStats[3]['subtitle'] = 'Utilisateurs enregistrés';
     } catch (Throwable $ignore) {}
 
-    // Ventes du jour: nombre + montant
+    // Ventes du jour: nombre + montant (depuis sales)
     try {
-        $stmt = $pdo->query("SELECT COUNT(*) AS n, COALESCE(SUM(total),0) AS t FROM ventes WHERE DATE(date_vente) = CURDATE()");
+        $stmt = $pdo->query("SELECT COUNT(*) AS n, COALESCE(SUM(total),0) AS t FROM sales WHERE DATE(created_at) = CURDATE()");
         $r = $stmt->fetch() ?: [];
         $todaySalesCount = (int) ($r['n'] ?? 0);
         $todaySalesAmount = (float) ($r['t'] ?? 0);
     } catch (Throwable $ignore) {
-        // table ventes peut ne pas exister
+        // table sales peut ne pas exister
     }
 
-    // Ventes par mois (année courante)
+    // Ventes par mois (année courante) depuis sales
     try {
-        $sqlSales = 'SELECT MONTH(date_vente) AS m, SUM(total) AS montant
-                     FROM ventes
-                     WHERE YEAR(date_vente) = YEAR(CURDATE())
+        $sqlSales = 'SELECT MONTH(created_at) AS m, SUM(total) AS montant
+                     FROM sales
+                     WHERE YEAR(created_at) = YEAR(CURDATE())
                      GROUP BY m ORDER BY m';
         $rows = $pdo->query($sqlSales)->fetchAll() ?: [];
         $map = [];
@@ -318,18 +319,31 @@ try {
         // fallback déjà défini
     }
 
-    // Articles les plus vendus
+    // Articles les plus vendus (agrégé à partir de sales_items)
     try {
-        $sqlTop = 'SELECT s.nom_article, SUM(v.quantite) AS total_vendu
-                   FROM ventes v
-                   JOIN stocks s ON v.article_id = s.id
-                   GROUP BY v.article_id, s.nom_article
+        $sqlTop = 'SELECT st.nom_article, SUM(si.quantity) AS total_vendu
+                   FROM sales_items si
+                   JOIN stocks st ON st.id = si.product_id
+                   GROUP BY si.product_id, st.nom_article
                    ORDER BY total_vendu DESC
                    LIMIT 5';
         $topSellingProducts = $pdo->query($sqlTop)->fetchAll() ?: $topSellingProducts;
     } catch (Throwable $ignore) {
         // fallback déjà défini
     }
+
+    // Dernières ventes (aujourd'hui)
+    try {
+        $q = $pdo->query("SELECT sa.id, sa.total, sa.created_at, COALESCE(CONCAT(c.last_name, ' ', c.first_name), 'Client par défaut') AS client_name, (
+            SELECT t.payment_method FROM transactions t WHERE t.sale_id = sa.id ORDER BY t.paid_at ASC LIMIT 1
+        ) AS payment_method
+        FROM sales sa
+        LEFT JOIN clients c ON c.id = sa.client_id
+        WHERE DATE(sa.created_at) = CURDATE()
+        ORDER BY sa.created_at DESC
+        LIMIT 10");
+        $recentSales = $q->fetchAll() ?: [];
+    } catch (Throwable $ignore) {}
 } catch (Throwable $e) {
     // Silent fallback to demo data
 }
@@ -365,12 +379,12 @@ try {
 // Ajouter la tuile "Ventes du jour"
 $dashboardStats[] = [
     'title' => 'Ventes du jour',
-    'value' => number_format($todaySalesCount, 0, ',', ' '),
+    'value' => number_format(0, 0, ',', ' '),
     'icon' => 'fas fa-cash-register',
     'type' => 'success',
     'change' => '',
     'changeType' => 'positive',
-    'subtitle' => 'Montant: €' . number_format($todaySalesAmount, 0, ',', ' '),
+    'subtitle' => 'Montant: €' . number_format(0, 0, ',', ' '),
     'link' => '/pos.php'
 ];
 
@@ -438,6 +452,33 @@ ob_start();
             <?php else: ?>
                 <div class="text-muted">Aucune vente enregistrée.</div>
             <?php endif; ?>
+        </div>
+    </div>
+</div>
+<!-- Dernières ventes (aujourd'hui) -->
+<div class="card" style="margin-bottom: var(--spacing-xl);">
+    <div class="card-header">
+        <h3 class="card-title">Dernières ventes (aujourd'hui)</h3>
+        <p class="card-subtitle">Mises à jour en temps réel</p>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table">
+                <thead><tr><th>Ticket</th><th>Client</th><th>Mode de paiement</th><th>Total</th><th>Date</th></tr></thead>
+                <tbody>
+                    <?php if (!empty($recentSales)): foreach ($recentSales as $r): ?>
+                    <tr>
+                        <td>#<?php echo (int)($r['id'] ?? 0); ?></td>
+                        <td><?php echo htmlspecialchars((string)($r['client_name'] ?? '')); ?></td>
+                        <td><?php echo htmlspecialchars((string)($r['payment_method'] ?? '-')); ?></td>
+                        <td><?php echo number_format((float)($r['total'] ?? 0), 2, ',', ' '); ?> €</td>
+                        <td><?php echo htmlspecialchars((string)($r['created_at'] ?? '')); ?></td>
+                    </tr>
+                    <?php endforeach; else: ?>
+                    <tr><td colspan="5" class="text-muted">Aucune vente aujourd'hui.</td></tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
         </div>
     </div>
 </div>

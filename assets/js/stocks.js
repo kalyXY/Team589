@@ -32,10 +32,13 @@ class StocksManager {
             }
         });
         
-        // Mettre à jour les métriques
-        document.getElementById('totalArticlesMetric').textContent = totalArticles;
-        document.getElementById('lowStockMetric').textContent = lowStockCount;
-        document.getElementById('categoriesMetric').textContent = categories.size;
+        // Mettre à jour les métriques (si présentes dans le DOM)
+        const totalEl = document.getElementById('totalArticlesMetric');
+        if (totalEl) totalEl.textContent = totalArticles;
+        const lowEl = document.getElementById('lowStockMetric');
+        if (lowEl) lowEl.textContent = lowStockCount;
+        const catEl = document.getElementById('categoriesMetric');
+        if (catEl) catEl.textContent = categories.size;
         
         // Animation des nombres
         this.animateNumbers();
@@ -75,32 +78,53 @@ class StocksManager {
 
     // Gestion des onglets
     showTab(tabName) {
+        console.log('showTab called with:', tabName);
+        
         // Masquer tous les onglets
         document.querySelectorAll('.tab-content').forEach(tab => {
+            tab.style.display = 'none';
             tab.classList.remove('active');
         });
         
         // Désactiver tous les boutons d'onglet
-        document.querySelectorAll('.tab-button').forEach(btn => {
+        document.querySelectorAll('.btn[onclick*="showTab"]').forEach(btn => {
+            btn.style.borderBottom = '3px solid transparent';
             btn.classList.remove('active');
         });
         
         // Afficher l'onglet sélectionné
-        document.getElementById(tabName + '-tab').classList.add('active');
+        const targetTab = document.getElementById(tabName + '-tab');
+        if (targetTab) {
+            targetTab.style.display = 'block';
+            targetTab.classList.add('active');
+        }
         
         // Activer le bouton correspondant
-        event.target.classList.add('active');
+        const targetBtn = document.getElementById(tabName + 'Tab');
+        if (targetBtn) {
+            targetBtn.style.borderBottom = '3px solid var(--primary-color)';
+            targetBtn.classList.add('active');
+        }
+        
+        console.log('Tab switched to:', tabName);
     }
 
     // Gestion des modales
     openModal(modalId) {
-        document.getElementById(modalId).style.display = 'block';
+        const el = document.getElementById(modalId);
+        if (!el) return;
+        el.classList.add('show');
         document.body.style.overflow = 'hidden';
     }
 
     closeModal(modalId) {
-        document.getElementById(modalId).style.display = 'none';
-        document.body.style.overflow = 'auto';
+        const el = document.getElementById(modalId);
+        if (!el) return;
+        el.classList.remove('show');
+        // Si aucune autre modale n'est ouverte, réactiver le scroll
+        if (!document.querySelector('.modal.show')) {
+            document.body.style.overflow = 'auto';
+        }
         
         // Reset du formulaire
         const form = document.querySelector(`#${modalId} form`);
@@ -109,13 +133,27 @@ class StocksManager {
         }
     }
 
+    closeAllModals() {
+        document.querySelectorAll('.modal.show').forEach(m => m.classList.remove('show'));
+        document.body.style.overflow = 'auto';
+    }
+
     // Gestion des événements
     bindEvents() {
         // Fermer les modales en cliquant à l'extérieur
         window.addEventListener('click', (event) => {
-            if (event.target.classList.contains('modal')) {
-                event.target.style.display = 'none';
-                document.body.style.overflow = 'auto';
+            if (event.target.classList && event.target.classList.contains('modal')) {
+                event.target.classList.remove('show');
+                if (!document.querySelector('.modal.show')) {
+                    document.body.style.overflow = 'auto';
+                }
+            }
+        });
+        
+        // Fermer avec la touche Echap
+        window.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                this.closeAllModals();
             }
         });
 
@@ -170,25 +208,38 @@ class StocksManager {
 
     openEditModal(id) {
         fetch(`?ajax=get_stock&id=${id}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data) {
-                    document.getElementById('modalTitle').innerHTML = '<i class="fas fa-edit"></i> Modifier un article';
-                    document.getElementById('formAction').value = 'update';
-                    document.getElementById('stockId').value = data.id;
-                    document.getElementById('nom_article').value = data.nom_article;
-                    document.getElementById('categorie').value = data.categorie;
-                    document.getElementById('quantite').value = data.quantite;
-                    document.getElementById('seuil').value = data.seuil;
-                    if (data.prix_achat) document.getElementById('prix_achat').value = data.prix_achat;
-                    if (data.prix_vente) document.getElementById('prix_vente').value = data.prix_vente;
-                    document.getElementById('submitBtn').textContent = 'Modifier';
-                    this.openModal('stockModal');
+            .then(async (response) => {
+                const status = response.status;
+                const url = response.url;
+                const text = await response.text();
+                try {
+                    const data = JSON.parse(text);
+                    if (data) {
+                        document.getElementById('modalTitle').innerHTML = '<i class="fas fa-edit"></i> Modifier un article';
+                        document.getElementById('formAction').value = 'update';
+                        document.getElementById('stockId').value = data.id;
+                        document.getElementById('nom_article').value = data.nom_article;
+                        document.getElementById('categorie').value = data.categorie;
+                        document.getElementById('quantite').value = data.quantite;
+                        document.getElementById('seuil').value = data.seuil;
+                        if (data.prix_achat) document.getElementById('prix_achat').value = data.prix_achat;
+                        if (data.prix_vente) document.getElementById('prix_vente').value = data.prix_vente;
+                        const submitBtn = document.getElementById('submitBtn');
+                        submitBtn.textContent = 'Modifier';
+                        submitBtn.className = 'btn btn-warning';
+                        this.openModal('stockModal');
+                    } else {
+                        console.error('Aucun article trouvé pour id =', id);
+                        if (typeof showError === 'function') { showError('Article introuvable.'); } else { console.error('Article introuvable.'); }
+                    }
+                } catch (err) {
+                    console.error('Réponse non-JSON depuis', url, '(status', status + '):', text);
+                    if (typeof showError === 'function') { showError('Erreur lors du chargement des données.'); }
                 }
             })
             .catch(error => {
-                console.error('Erreur:', error);
-                alert('Erreur lors du chargement des données');
+                console.error('Erreur réseau:', error);
+                if (typeof showError === 'function') { showError('Erreur réseau lors du chargement des données'); }
             });
     }
 
@@ -231,6 +282,45 @@ document.addEventListener('DOMContentLoaded', function() {
     window.executeDelete = () => stocksManager.executeDelete();
     window.closeModal = (modal) => stocksManager.closeModal(modal);
     window.closeDeleteModal = () => stocksManager.closeDeleteModal();
+    
+    // Ajouter des gestionnaires d'événements pour les boutons d'action
+    setTimeout(() => {
+        // Gestionnaires pour les boutons d'édition
+        document.querySelectorAll('.action-btn[onclick*="openEditModal"]').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const onclick = this.getAttribute('onclick');
+                if (onclick) {
+                    eval(onclick);
+                }
+            });
+        });
+        
+        // Gestionnaires pour les boutons de suppression
+        document.querySelectorAll('.action-btn[onclick*="confirmDelete"]').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const onclick = this.getAttribute('onclick');
+                if (onclick) {
+                    eval(onclick);
+                }
+            });
+        });
+        
+        // Gestionnaires pour les boutons d'onglets
+        document.querySelectorAll('.btn[onclick*="showTab"]').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const onclick = this.getAttribute('onclick');
+                if (onclick) {
+                    eval(onclick);
+                }
+            });
+        });
+    }, 100);
 });
 
 // Export pour utilisation en module (optionnel)

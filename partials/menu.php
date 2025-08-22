@@ -32,8 +32,9 @@ if ($role === 'admin') {
 	renderNavItem('stocks.php', 'fas fa-boxes', 'Stocks', $currentPage ?? '');
 	renderNavItem('alerts.php', 'fas fa-exclamation-triangle', 'Alertes & Réappro', $currentPage ?? '');
 	renderNavItem('finances.php', 'fas fa-euro-sign', 'Finances', $currentPage ?? '');
+	renderNavItem('admin_depenses.php', 'fas fa-money-bill-wave', 'Dépenses', $currentPage ?? '');
 	renderNavItem('clients.php', 'fas fa-user-friends', 'Clients', $currentPage ?? '');
-	renderNavItem('users.php', 'fas fa-users-cog', 'Utilisateurs', $currentPage ?? '');
+	renderNavItem('users_admin.php', 'fas fa-users-cog', 'Utilisateurs', $currentPage ?? '');
 	echo '</div>';
 
 	echo '<div class="nav-section">';

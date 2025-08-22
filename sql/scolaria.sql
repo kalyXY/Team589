@@ -3,15 +3,13 @@
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : 127.0.0.1
--- Généré le : jeu. 21 août 2025 à 17:06
+-- Généré le : ven. 22 août 2025 à 15:22
 -- Version du serveur : 10.4.32-MariaDB
 -- Version de PHP : 8.0.30
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
 SET time_zone = "+00:00";
-
-SET FOREIGN_KEY_CHECKS=0;
 
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -26,10 +24,23 @@ SET FOREIGN_KEY_CHECKS=0;
 -- --------------------------------------------------------
 
 --
+-- Structure de la table `alertes`
+--
+
+CREATE TABLE `alertes` (
+  `id` int(11) NOT NULL,
+  `stock_id` int(11) NOT NULL,
+  `type` enum('low_stock','out_of_stock') NOT NULL,
+  `message` varchar(255) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Structure de la table `budgets`
 --
 
-DROP TABLE IF EXISTS `budgets`;
 CREATE TABLE `budgets` (
   `id` int(11) NOT NULL,
   `mois` int(11) NOT NULL CHECK (`mois` between 1 and 12),
@@ -60,39 +71,9 @@ INSERT INTO `budgets` (`id`, `mois`, `annee`, `montant_prevu`, `categorie_id`, `
 -- --------------------------------------------------------
 
 --
--- Structure de la table `categories`
---
-
-DROP TABLE IF EXISTS `categories`;
-CREATE TABLE `categories` (
-  `id` int(11) NOT NULL,
-  `nom` varchar(100) NOT NULL,
-  `description` text DEFAULT NULL,
-  `couleur` varchar(7) DEFAULT '#3B82F6',
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Déchargement des données de la table `categories`
---
-
-INSERT INTO `categories` (`id`, `nom`, `description`, `couleur`, `created_at`, `updated_at`) VALUES
-(1, 'Fournitures', 'Matériel scolaire, papeterie, consommables', '#3B82F6', '2025-08-20 18:43:37', '2025-08-20 18:43:37'),
-(2, 'Maintenance', 'Réparations, entretien des équipements', '#EF4444', '2025-08-20 18:43:37', '2025-08-20 18:43:37'),
-(3, 'Investissement', 'Achat d\'équipements, mobilier, informatique', '#10B981', '2025-08-20 18:43:37', '2025-08-20 18:43:37'),
-(4, 'Personnel', 'Salaires, charges sociales, formations', '#8B5CF6', '2025-08-20 18:43:37', '2025-08-20 18:43:37'),
-(5, 'Utilities', 'Électricité, eau, internet, téléphone', '#F59E0B', '2025-08-20 18:43:37', '2025-08-20 18:43:37'),
-(6, 'Transport', 'Déplacements, carburant, transport scolaire', '#06B6D4', '2025-08-20 18:43:37', '2025-08-20 18:43:37'),
-(7, 'Divers', 'Autres dépenses non catégorisées', '#6B7280', '2025-08-20 18:43:37', '2025-08-20 18:43:37');
-
--- --------------------------------------------------------
-
---
 -- Structure de la table `clients`
 --
 
-DROP TABLE IF EXISTS `clients`;
 CREATE TABLE `clients` (
   `id` int(11) NOT NULL,
   `first_name` varchar(100) NOT NULL,
@@ -129,7 +110,6 @@ INSERT INTO `clients` (`id`, `first_name`, `last_name`, `phone`, `email`, `addre
 -- Structure de la table `commandes`
 --
 
-DROP TABLE IF EXISTS `commandes`;
 CREATE TABLE `commandes` (
   `id` int(11) NOT NULL,
   `article_id` int(11) NOT NULL,
@@ -159,7 +139,6 @@ INSERT INTO `commandes` (`id`, `article_id`, `fournisseur_id`, `quantite`, `prix
 -- Structure de la table `depenses`
 --
 
-DROP TABLE IF EXISTS `depenses`;
 CREATE TABLE `depenses` (
   `id` int(11) NOT NULL,
   `description` varchar(255) NOT NULL,
@@ -199,7 +178,6 @@ INSERT INTO `depenses` (`id`, `description`, `montant`, `date`, `categorie_id`, 
 -- Structure de la table `fournisseurs`
 --
 
-DROP TABLE IF EXISTS `fournisseurs`;
 CREATE TABLE `fournisseurs` (
   `id` int(11) NOT NULL,
   `nom` varchar(150) NOT NULL,
@@ -223,10 +201,23 @@ INSERT INTO `fournisseurs` (`id`, `nom`, `contact`, `email`, `telephone`, `adres
 -- --------------------------------------------------------
 
 --
+-- Structure de la table `login_history`
+--
+
+CREATE TABLE `login_history` (
+  `id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `ip_address` varchar(45) DEFAULT NULL,
+  `user_agent` varchar(255) DEFAULT NULL,
+  `logged_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Structure de la table `mouvements`
 --
 
-DROP TABLE IF EXISTS `mouvements`;
 CREATE TABLE `mouvements` (
   `id` int(11) NOT NULL,
   `article_id` int(11) DEFAULT NULL,
@@ -258,7 +249,35 @@ INSERT INTO `mouvements` (`id`, `article_id`, `action`, `details`, `utilisateur`
 (17, 10, 'ajout', 'Nouveau article ajouté: Tableaux blancs - Quantité initiale: 8', 'admin', '2025-08-20 13:49:48'),
 (18, 11, 'ajout', 'Nouveau article ajouté: Projecteurs - Quantité initiale: 5', 'admin', '2025-08-20 13:49:48'),
 (19, 12, 'ajout', 'Nouveau article ajouté: Ordinateurs portables - Quantité initiale: 12', 'admin', '2025-08-20 13:49:48'),
-(20, 13, 'ajout', 'Nouveau article ajouté: Cahiers travaux pratiques - Quantité initiale: 200', 'admin', '2025-08-20 13:49:48');
+(20, 13, 'ajout', 'Nouveau article ajouté: Cahiers travaux pratiques - Quantité initiale: 200', 'admin', '2025-08-20 13:49:48'),
+(0, 6, 'suppression', 'Suppression de l\'article: Calculatrices scientifiques (Quantité: 25)', 'admin', '2025-08-22 12:33:19'),
+(0, 7, 'suppression', 'Suppression de l\'article: Règles 30cm (Quantité: 45)', 'admin', '2025-08-22 12:33:23'),
+(0, 8, 'suppression', 'Suppression de l\'article: Livres de mathématiques (Quantité: 80)', 'admin', '2025-08-22 12:33:28'),
+(0, 9, 'suppression', 'Suppression de l\'article: Chaises scolaires (Quantité: 120)', 'admin', '2025-08-22 12:33:31'),
+(0, 10, 'suppression', 'Suppression de l\'article: Tableaux blancs (Quantité: 8)', 'admin', '2025-08-22 12:33:34'),
+(0, 11, 'suppression', 'Suppression de l\'article: Projecteurs (Quantité: 5)', 'admin', '2025-08-22 12:33:37'),
+(0, 12, 'suppression', 'Suppression de l\'article: Ordinateurs portables (Quantité: 12)', 'admin', '2025-08-22 12:33:40'),
+(0, 13, 'suppression', 'Suppression de l\'article: Cahiers travaux pratiques (Quantité: 200)', 'admin', '2025-08-22 12:33:42'),
+(0, 1, 'suppression', 'Suppression de l\'article: Stylos bleus (Quantité: 120)', 'admin', '2025-08-22 12:33:45'),
+(0, 2, 'suppression', 'Suppression de l\'article: Cahiers A4 (Quantité: 40)', 'admin', '2025-08-22 12:33:49'),
+(0, 3, 'suppression', 'Suppression de l\'article: Marqueurs effaçables (Quantité: 15)', 'admin', '2025-08-22 12:33:51'),
+(0, 4, 'suppression', 'Suppression de l\'article: Feuilles A3 (Quantité: 6)', 'admin', '2025-08-22 12:33:54'),
+(0, 5, 'suppression', 'Suppression de l\'article: Cartouches impression (Quantité: 3)', 'admin', '2025-08-22 12:33:57'),
+(0, 0, 'ajout', 'Ajout de 50 Journal de classe', 'admin', '2025-08-22 12:43:29');
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `roles_custom`
+--
+
+CREATE TABLE `roles_custom` (
+  `id` int(11) NOT NULL,
+  `name` varchar(100) NOT NULL,
+  `permissions` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`permissions`)),
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -266,7 +285,6 @@ INSERT INTO `mouvements` (`id`, `article_id`, `action`, `details`, `utilisateur`
 -- Structure de la table `sales`
 --
 
-DROP TABLE IF EXISTS `sales`;
 CREATE TABLE `sales` (
   `id` int(11) NOT NULL,
   `client_id` int(11) DEFAULT NULL,
@@ -279,14 +297,10 @@ CREATE TABLE `sales` (
 --
 
 INSERT INTO `sales` (`id`, `client_id`, `total`, `created_at`) VALUES
-(1, 1, 12.50, '2025-01-15 08:30:00'),
-(2, 1, 7.50, '2025-01-15 08:35:00'),
-(3, 1, 12.50, '2025-01-15 08:30:00'),
-(4, 1, 7.50, '2025-01-15 08:35:00'),
-(5, 1, 12.50, '2025-01-15 08:30:00'),
-(6, 1, 7.50, '2025-01-15 08:35:00'),
-(7, 1, 12.50, '2025-01-15 08:30:00'),
-(8, 1, 7.50, '2025-01-15 08:35:00');
+(1, 1, 12.50, '2025-01-15 06:30:00'),
+(2, 1, 7.50, '2025-01-15 06:35:00'),
+(3, 1, 12.50, '2025-01-15 06:30:00'),
+(4, 1, 7.50, '2025-01-15 06:35:00');
 
 -- --------------------------------------------------------
 
@@ -294,7 +308,6 @@ INSERT INTO `sales` (`id`, `client_id`, `total`, `created_at`) VALUES
 -- Structure de la table `sales_items`
 --
 
-DROP TABLE IF EXISTS `sales_items`;
 CREATE TABLE `sales_items` (
   `id` int(11) NOT NULL,
   `sale_id` int(11) NOT NULL,
@@ -313,33 +326,37 @@ INSERT INTO `sales_items` (`id`, `sale_id`, `product_id`, `quantity`, `price`) V
 -- --------------------------------------------------------
 
 --
--- Structure de la table `transactions`
+-- Structure de la table `school_settings`
 --
 
-DROP TABLE IF EXISTS `transactions`;
-CREATE TABLE `transactions` (
-  `id` int(11) NOT NULL,
-  `sale_id` int(11) NOT NULL,
-  `amount` decimal(10,2) NOT NULL,
-  `payment_method` enum('cash','mobile_money','card','transfer') NOT NULL,
-  `reference` varchar(100) DEFAULT NULL,
-  `paid_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE `school_settings` (
+  `id` int(11) NOT NULL DEFAULT 1,
+  `school_name` varchar(200) NOT NULL DEFAULT '',
+  `address` text DEFAULT NULL,
+  `phone` varchar(50) DEFAULT NULL,
+  `email` varchar(150) DEFAULT NULL,
+  `logo_path` varchar(255) DEFAULT NULL,
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Déchargement des données de la table `school_settings`
+--
+
+INSERT INTO `school_settings` (`id`, `school_name`, `address`, `phone`, `email`, `logo_path`, `updated_at`) VALUES
+(1, '', NULL, NULL, NULL, NULL, '2025-08-22 10:09:07');
 
 -- --------------------------------------------------------
 
 --
--- Structure de la table `alertes`
+-- Structure de la table `security_flags`
 --
 
-DROP TABLE IF EXISTS `alertes`;
-CREATE TABLE `alertes` (
-  `id` int(11) NOT NULL,
-  `stock_id` int(11) NOT NULL,
-  `type` enum('low_stock','out_of_stock') NOT NULL,
-  `message` varchar(255) NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE `security_flags` (
+  `flag` varchar(64) NOT NULL,
+  `value_text` text DEFAULT NULL,
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -347,7 +364,6 @@ CREATE TABLE `alertes` (
 -- Structure de la table `stocks`
 --
 
-DROP TABLE IF EXISTS `stocks`;
 CREATE TABLE `stocks` (
   `id` int(11) NOT NULL,
   `nom_article` varchar(150) NOT NULL,
@@ -366,20 +382,43 @@ CREATE TABLE `stocks` (
 -- Déchargement des données de la table `stocks`
 --
 
-INSERT INTO `stocks` (`id`, `nom_article`, `categorie`, `quantite`, `seuil`, `created_at`, `updated_at`, `seuil_alerte`, `prix_vente`) VALUES
-(1, 'Stylos bleus', 'Fournitures', 120, 50, '2025-08-20 12:50:10', '2025-08-20 13:49:48', 10, 0.00),
-(2, 'Cahiers A4', 'Papeterie', 40, 60, '2025-08-20 12:50:10', '2025-08-20 13:49:48', 10, 0.00),
-(3, 'Marqueurs effaçables', 'Fournitures', 15, 30, '2025-08-20 12:50:10', '2025-08-20 13:49:48', 10, 0.00),
-(4, 'Feuilles A3', 'Papeterie', 6, 10, '2025-08-20 12:50:10', '2025-08-20 13:49:48', 10, 0.00),
-(5, 'Cartouches impression', 'Informatique', 3, 5, '2025-08-20 12:50:10', '2025-08-20 13:49:48', 10, 0.00),
-(6, 'Calculatrices scientifiques', 'Matériel scolaire', 25, 5, '2025-08-20 13:49:48', '2025-08-20 13:49:48', 10, 0.00),
-(7, 'Règles 30cm', 'Matériel scolaire', 45, 10, '2025-08-20 13:49:48', '2025-08-20 13:49:48', 10, 0.00),
-(8, 'Livres de mathématiques', 'Manuels', 80, 15, '2025-08-20 13:49:48', '2025-08-20 13:49:48', 10, 0.00),
-(9, 'Chaises scolaires', 'Mobilier', 120, 20, '2025-08-20 13:49:48', '2025-08-20 13:49:48', 10, 0.00),
-(10, 'Tableaux blancs', 'Matériel enseignant', 8, 3, '2025-08-20 13:49:48', '2025-08-20 13:49:48', 10, 0.00),
-(11, 'Projecteurs', 'Informatique', 5, 2, '2025-08-20 13:49:48', '2025-08-20 13:49:48', 10, 0.00),
-(12, 'Ordinateurs portables', 'Informatique', 12, 3, '2025-08-20 13:49:48', '2025-08-20 13:49:48', 10, 0.00),
-(13, 'Cahiers travaux pratiques', 'Papeterie', 200, 40, '2025-08-20 13:49:48', '2025-08-20 13:49:48', 10, 0.00);
+INSERT INTO `stocks` (`id`, `nom_article`, `categorie`, `code_barres`, `prix_achat`, `quantite`, `seuil`, `created_at`, `updated_at`, `seuil_alerte`, `prix_vente`) VALUES
+(0, 'Journal de classe', 'Fourniture', NULL, 1.50, 50, 10, '2025-08-22 12:43:29', '2025-08-22 12:43:29', 10, 3.00);
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `system_config`
+--
+
+CREATE TABLE `system_config` (
+  `id` int(11) NOT NULL DEFAULT 1,
+  `min_stock_threshold` int(11) NOT NULL DEFAULT 1,
+  `payment_modes` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`payment_modes`)),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Déchargement des données de la table `system_config`
+--
+
+INSERT INTO `system_config` (`id`, `min_stock_threshold`, `payment_modes`, `updated_at`) VALUES
+(1, 1, '[]', '2025-08-22 10:09:07');
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `transactions`
+--
+
+CREATE TABLE `transactions` (
+  `id` int(11) NOT NULL,
+  `sale_id` int(11) NOT NULL,
+  `amount` decimal(10,2) NOT NULL,
+  `payment_method` enum('cash','mobile_money','card','transfer') NOT NULL,
+  `reference` varchar(100) DEFAULT NULL,
+  `paid_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -387,13 +426,16 @@ INSERT INTO `stocks` (`id`, `nom_article`, `categorie`, `quantite`, `seuil`, `cr
 -- Structure de la table `users`
 --
 
-DROP TABLE IF EXISTS `users`;
 CREATE TABLE `users` (
   `id` int(11) NOT NULL,
   `username` varchar(100) NOT NULL,
+  `full_name` varchar(150) DEFAULT NULL,
   `email` varchar(150) NOT NULL,
+  `phone` varchar(30) DEFAULT NULL,
   `password` varchar(255) NOT NULL,
   `role` enum('admin','gestionnaire','caissier','directeur','utilisateur') NOT NULL DEFAULT 'utilisateur',
+  `status` enum('actif','inactif') NOT NULL DEFAULT 'actif',
+  `avatar_path` varchar(255) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -401,11 +443,11 @@ CREATE TABLE `users` (
 -- Déchargement des données de la table `users`
 --
 
-INSERT INTO `users` (`id`, `username`, `email`, `password`, `role`, `created_at`) VALUES
-(1, 'admin', 'admin@scolaria.local', '$2y$10$4IWV/38Ka0c/FgDNnoCYSu25WxwaDycCMdr1J8PVc8Gf/xsahvmRu', 'admin', '2025-08-21 09:55:06'),
-(2, 'gestionnaire', 'gestionnaire@scolaria.local', '$2y$10$cMNWtGk4gDqCjt6Buodrf.kqHFi3bfNupK6Fx3VHfDS3mC6GtUDuO', 'gestionnaire', '2025-08-21 09:55:06'),
-(3, 'caissier', 'caissier@scolaria.local', '$2y$10$bd7dN.BF6mgWmVWj1TiJyOYPAuRhlgnpeOaEyduKsug1MEsYEhQDy', 'caissier', '2025-08-21 10:14:29'),
-(8, 'directeur', 'directeur@scolaria.local', '$2y$10$4IWV/38Ka0c/FgDNnoCYSu25WxwaDycCMdr1J8PVc8Gf/xsahvmRu', 'directeur', '2025-08-21 14:32:08');
+INSERT INTO `users` (`id`, `username`, `full_name`, `email`, `phone`, `password`, `role`, `status`, `avatar_path`, `created_at`) VALUES
+(1, 'Don', 'Don Zirhumanana', 'donzirhumanana71@gmail.com', '+243 81 234 5678', '$2y$10$SYhaNnZIwyokZqejwN1Zr.f8wG5xCh97RfnZ3FuLKos70pDw9E/zq', 'admin', 'actif', 'uploads/profiles/u_1755862460_8995363c.jpg', '2025-08-21 09:55:06'),
+(2, 'Alliance', 'Alliance Françoise', 'alliancefrancoise4@gmail.com', '+243991277185', '$2y$10$Day.MX37x5e0/iTfZ9CJ6eKAPBRJaC2rIT8iFMCBcbt0z3LazYxOq', 'gestionnaire', 'actif', 'uploads/profiles/u_1755860969_4c9c7c18.jpg', '2025-08-21 09:55:06'),
+(3, 'Milka', 'Milka Kabamba', 'milkakabamba078@gmail.com', '+243 83 456 7890', '$2y$10$R.i9A0KtmWvKHnrwifa.Y.v/NY8utHw9cAx19HMOnE9do0GDg5yGq', 'caissier', 'actif', 'uploads/profiles/u_1755862599_18449c52.jpg', '2025-08-21 10:14:29'),
+(8, 'directeur', 'Directeur École', 'directeur@scolaria.local', '+243 84 567 8901', '$2y$10$4IWV/38Ka0c/FgDNnoCYSu25WxwaDycCMdr1J8PVc8Gf/xsahvmRu', 'directeur', 'actif', NULL, '2025-08-21 14:32:08');
 
 -- --------------------------------------------------------
 
@@ -414,15 +456,6 @@ INSERT INTO `users` (`id`, `username`, `email`, `password`, `role`, `created_at`
 -- (Voir ci-dessous la vue réelle)
 --
 CREATE TABLE `v_budgets_comparaison` (
-`id` int(11)
-,`mois` int(11)
-,`annee` int(11)
-,`montant_prevu` decimal(10,2)
-,`categorie_nom` varchar(100)
-,`categorie_couleur` varchar(7)
-,`montant_reel` decimal(32,2)
-,`difference` decimal(33,2)
-,`statut` varchar(11)
 );
 
 -- --------------------------------------------------------
@@ -461,8 +494,8 @@ CREATE TABLE `v_client_purchase_history` (
 ,`unit_price` decimal(10,2)
 ,`total_amount` decimal(20,2)
 ,`sale_date` timestamp
-,`payment_method` binary(0)
-,`notes` binary(0)
+,`payment_method` enum('cash','mobile_money','card','transfer')
+,`notes` varchar(100)
 );
 
 -- --------------------------------------------------------
@@ -472,17 +505,6 @@ CREATE TABLE `v_client_purchase_history` (
 -- (Voir ci-dessous la vue réelle)
 --
 CREATE TABLE `v_depenses_rapport` (
-`id` int(11)
-,`description` varchar(255)
-,`montant` decimal(10,2)
-,`date` date
-,`facture_numero` varchar(50)
-,`fournisseur` varchar(100)
-,`categorie_nom` varchar(100)
-,`categorie_couleur` varchar(7)
-,`annee` int(4)
-,`mois` int(2)
-,`periode` varchar(7)
 );
 
 -- --------------------------------------------------------
@@ -510,13 +532,7 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW 
 --
 DROP TABLE IF EXISTS `v_client_purchase_history`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v_client_purchase_history`  AS SELECT `sa`.`id` AS `sale_id`, `sa`.`client_id` AS `client_id`, concat(`c`.`first_name`,' ',`c`.`last_name`) AS `client_name`, `c`.`phone` AS `phone`, `st`.`nom_article` AS `product_name`, `si`.`quantity` AS `quantity`, `si`.`price` AS `unit_price`, `si`.`quantity`* `si`.`price` AS `total_amount`, `sa`.`created_at` AS `sale_date`, `t`.`payment_method` AS `payment_method`, `t`.`reference` AS `notes` FROM ((((
-  `sales` `sa`
-  join `clients` `c` on(`sa`.`client_id` = `c`.`id`))
-  join `sales_items` `si` on(`si`.`sale_id` = `sa`.`id`))
-  join `stocks` `st` on(`st`.`id` = `si`.`product_id`))
-  left join `transactions` `t` on(`t`.`sale_id` = `sa`.`id`)
-) ORDER BY `sa`.`created_at` DESC ;
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v_client_purchase_history`  AS SELECT `sa`.`id` AS `sale_id`, `sa`.`client_id` AS `client_id`, concat(`c`.`first_name`,' ',`c`.`last_name`) AS `client_name`, `c`.`phone` AS `phone`, `st`.`nom_article` AS `product_name`, `si`.`quantity` AS `quantity`, `si`.`price` AS `unit_price`, `si`.`quantity`* `si`.`price` AS `total_amount`, `sa`.`created_at` AS `sale_date`, `t`.`payment_method` AS `payment_method`, `t`.`reference` AS `notes` FROM ((((`sales` `sa` join `clients` `c` on(`sa`.`client_id` = `c`.`id`)) join `sales_items` `si` on(`si`.`sale_id` = `sa`.`id`)) join `stocks` `st` on(`st`.`id` = `si`.`product_id`)) left join `transactions` `t` on(`t`.`sale_id` = `sa`.`id`)) ORDER BY `sa`.`created_at` DESC ;
 
 -- --------------------------------------------------------
 
@@ -532,70 +548,19 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW 
 --
 
 --
--- Index pour la table `budgets`
+-- Index pour la table `login_history`
 --
-ALTER TABLE `budgets`
+ALTER TABLE `login_history`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `unique_budget` (`mois`,`annee`,`categorie_id`),
-  ADD KEY `categorie_id` (`categorie_id`),
-  ADD KEY `idx_periode` (`mois`,`annee`);
+  ADD KEY `user_id` (`user_id`),
+  ADD KEY `logged_at` (`logged_at`);
 
 --
--- Index pour la table `categories`
+-- Index pour la table `roles_custom`
 --
-ALTER TABLE `categories`
+ALTER TABLE `roles_custom`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `nom` (`nom`);
-
---
--- Index pour la table `clients`
---
-ALTER TABLE `clients`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `phone` (`phone`),
-  ADD UNIQUE KEY `email` (`email`),
-  ADD KEY `idx_name` (`first_name`,`last_name`),
-  ADD KEY `idx_phone` (`phone`),
-  ADD KEY `idx_email` (`email`),
-  ADD KEY `idx_type` (`client_type`);
-
---
--- Index pour la table `commandes`
---
-ALTER TABLE `commandes`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `article_id` (`article_id`),
-  ADD KEY `fournisseur_id` (`fournisseur_id`),
-  ADD KEY `idx_commandes_statut` (`statut`),
-  ADD KEY `idx_commandes_date` (`date_commande`);
-
---
--- Index pour la table `depenses`
---
-ALTER TABLE `depenses`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `categorie_id` (`categorie_id`),
-  ADD KEY `idx_date` (`date`),
-  ADD KEY `idx_montant` (`montant`),
-  ADD KEY `idx_date_depenses` (`date`),
-  ADD KEY `idx_categorie_depenses` (`categorie_id`),
-  ADD KEY `idx_montant_depenses` (`montant`),
-  ADD KEY `idx_depenses_categorie_id` (`categorie_id`);
-
---
--- Index pour la table `fournisseurs`
---
-ALTER TABLE `fournisseurs`
-  ADD PRIMARY KEY (`id`);
-
---
--- Index pour la table `mouvements`
---
-ALTER TABLE `mouvements`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `idx_article_id` (`article_id`),
-  ADD KEY `idx_date_mouvement` (`date_mouvement`),
-  ADD KEY `idx_action` (`action`);
+  ADD UNIQUE KEY `name` (`name`);
 
 --
 -- Index pour la table `sales`
@@ -604,179 +569,53 @@ ALTER TABLE `sales`
   ADD PRIMARY KEY (`id`);
 
 --
--- Index pour la table `sales_items`
+-- Index pour la table `school_settings`
 --
-ALTER TABLE `sales_items`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `sale_id` (`sale_id`),
-  ADD KEY `product_id` (`product_id`);
+ALTER TABLE `school_settings`
+  ADD PRIMARY KEY (`id`);
 
 --
--- Index pour la table `stocks`
+-- Index pour la table `security_flags`
 --
-ALTER TABLE `stocks`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `idx_stocks_seuil` (`quantite`,`seuil_alerte`),
-  ADD KEY `idx_code_barres` (`code_barres`);
+ALTER TABLE `security_flags`
+  ADD PRIMARY KEY (`flag`);
 
 --
--- Index pour la table `transactions`
+-- Index pour la table `system_config`
 --
-
-ALTER TABLE `transactions`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `sale_id` (`sale_id`),
-  ADD KEY `idx_payment_method` (`payment_method`);
-
---
--- Index pour la table `alertes`
---
-
-ALTER TABLE `alertes`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `stock_id` (`stock_id`),
-  ADD KEY `idx_type` (`type`);
+ALTER TABLE `system_config`
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Index pour la table `users`
 --
 ALTER TABLE `users`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `uniq_users_username` (`username`),
-  ADD UNIQUE KEY `uniq_users_email` (`email`);
+  ADD KEY `idx_full_name` (`full_name`),
+  ADD KEY `idx_phone` (`phone`),
+  ADD KEY `idx_status` (`status`),
+  ADD KEY `idx_search` (`full_name`,`email`,`phone`);
 
 --
 -- AUTO_INCREMENT pour les tables déchargées
 --
 
 --
--- AUTO_INCREMENT pour la table `budgets`
+-- AUTO_INCREMENT pour la table `login_history`
 --
-ALTER TABLE `budgets`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+ALTER TABLE `login_history`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT pour la table `categories`
+-- AUTO_INCREMENT pour la table `roles_custom`
 --
-ALTER TABLE `categories`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
-
---
--- AUTO_INCREMENT pour la table `clients`
---
-ALTER TABLE `clients`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
-
---
--- AUTO_INCREMENT pour la table `commandes`
---
-ALTER TABLE `commandes`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
-
---
--- AUTO_INCREMENT pour la table `depenses`
---
-ALTER TABLE `depenses`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
-
---
--- AUTO_INCREMENT pour la table `fournisseurs`
---
-ALTER TABLE `fournisseurs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
-
---
--- AUTO_INCREMENT pour la table `mouvements`
---
-ALTER TABLE `mouvements`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28;
+ALTER TABLE `roles_custom`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT pour la table `sales`
 --
 ALTER TABLE `sales`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
-
---
--- AUTO_INCREMENT pour la table `sales_items`
---
-ALTER TABLE `sales_items`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
-
---
--- AUTO_INCREMENT pour la table `transactions`
---
-
-ALTER TABLE `transactions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT pour la table `alertes`
---
-
-ALTER TABLE `alertes`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT pour la table `stocks`
---
-ALTER TABLE `stocks`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
-
---
--- AUTO_INCREMENT pour la table `users`
---
-ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
-
---
--- Contraintes pour les tables déchargées
---
-
---
--- Contraintes pour la table `budgets`
---
-ALTER TABLE `budgets`
-  ADD CONSTRAINT `budgets_ibfk_1` FOREIGN KEY (`categorie_id`) REFERENCES `categories` (`id`) ON DELETE SET NULL;
-
---
--- Contraintes pour la table `commandes`
---
-ALTER TABLE `commandes`
-  ADD CONSTRAINT `commandes_ibfk_1` FOREIGN KEY (`article_id`) REFERENCES `stocks` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `commandes_ibfk_2` FOREIGN KEY (`fournisseur_id`) REFERENCES `fournisseurs` (`id`);
-
---
--- Contraintes pour la table `depenses`
---
-ALTER TABLE `depenses`
-  ADD CONSTRAINT `fk_depenses_categories` FOREIGN KEY (`categorie_id`) REFERENCES `categories` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
---
--- Contraintes pour la table `mouvements`
---
-ALTER TABLE `mouvements`
-  ADD CONSTRAINT `mouvements_ibfk_1` FOREIGN KEY (`article_id`) REFERENCES `stocks` (`id`) ON DELETE CASCADE;
-
---
--- Contraintes pour la table `sales_items`
---
-ALTER TABLE `sales_items`
-  ADD CONSTRAINT `sales_items_ibfk_1` FOREIGN KEY (`sale_id`) REFERENCES `sales` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `sales_items_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `stocks` (`id`);
---
--- Contraintes pour la table `transactions`
---
-
-ALTER TABLE `transactions`
-  ADD CONSTRAINT `transactions_ibfk_1` FOREIGN KEY (`sale_id`) REFERENCES `sales` (`id`) ON DELETE CASCADE;
-
---
--- Contraintes pour la table `alertes`
---
-
-ALTER TABLE `alertes`
-  ADD CONSTRAINT `alertes_ibfk_1` FOREIGN KEY (`stock_id`) REFERENCES `stocks` (`id`) ON DELETE CASCADE;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

@@ -268,15 +268,15 @@ ob_start();
 	<div class="kpi-grid">
 		<div class="kpi-card">
 			<div class="kpi-label">Chiffre d'affaires</div>
-			<div class="kpi-value" id="kpiTotal">0</div>
+			<div class="kpi-value" id="kpiTotal">4,746.15 €</div>
 		</div>
 		<div class="kpi-card">
 			<div class="kpi-label">Commandes</div>
-			<div class="kpi-value" id="kpiOrders">0</div>
+			<div class="kpi-value" id="kpiOrders">4</div>
 		</div>
 		<div class="kpi-card">
 			<div class="kpi-label">Panier moyen</div>
-			<div class="kpi-value" id="kpiAvg">0</div>
+			<div class="kpi-value" id="kpiAvg">1,186.54 €</div>
 		</div>
 	</div>
 

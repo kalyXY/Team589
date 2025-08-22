@@ -16,6 +16,17 @@ $kpiStmt = $pdo->prepare('SELECT COALESCE(SUM(total),0) AS total, COUNT(*) AS or
 $kpiStmt->execute([':s' => $todayStart, ':e' => $todayEnd]);
 $kpi = $kpiStmt->fetch() ?: ['total' => 0, 'orders' => 0];
 
+$recentStmt = $pdo->prepare('SELECT sa.id, sa.total, sa.created_at, COALESCE(CONCAT(c.last_name, " ", c.first_name), "Client par défaut") AS client_name, (
+    SELECT t.payment_method FROM transactions t WHERE t.sale_id = sa.id ORDER BY t.paid_at ASC LIMIT 1
+) AS payment_method
+FROM sales sa
+LEFT JOIN clients c ON c.id = sa.client_id
+WHERE sa.created_at BETWEEN :s AND :e
+ORDER BY sa.created_at DESC
+LIMIT 10');
+$recentStmt->execute([':s' => $todayStart, ':e' => $todayEnd]);
+$recentSales = $recentStmt->fetchAll() ?: [];
+
 $clientsStmt = $pdo->query('SELECT id, first_name, last_name, phone, created_at FROM clients ORDER BY created_at DESC LIMIT 10');
 $latestClients = $clientsStmt->fetchAll() ?: [];
 
@@ -46,6 +57,26 @@ ob_start();
 			<div class="client-stat-header"><h3 class="client-stat-title">Transactions</h3><div class="client-stat-icon"><i class="fas fa-receipt"></i></div></div>
 			<div class="client-stat-value"><?php echo (int)$kpi['orders']; ?></div>
 			<div class="client-stat-subtitle">Nombre de tickets</div>
+		</div>
+	</div>
+
+	<div class="clients-table card">
+		<div class="card-header"><h3 class="card-title">Dernières ventes (aujourd'hui)</h3></div>
+		<div class="card-body">
+			<div class="table-responsive">
+				<table class="table"><thead><tr><th>Ticket</th><th>Client</th><th>Paiement</th><th>Total</th><th>Date</th></tr></thead>
+				<tbody>
+					<?php foreach ($recentSales as $r): ?>
+					<tr>
+						<td>#<?php echo (int)$r['id']; ?></td>
+						<td><?php echo htmlspecialchars($r['client_name'] ?? ''); ?></td>
+						<td><?php echo htmlspecialchars($r['payment_method'] ?? '-'); ?></td>
+						<td><?php echo number_format((float)$r['total'], 2, ',', ' '); ?> €</td>
+						<td><?php echo htmlspecialchars($r['created_at']); ?></td>
+					</tr>
+					<?php endforeach; ?>
+				</tbody></table>
+			</div>
 		</div>
 	</div>
 

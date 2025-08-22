@@ -25,7 +25,7 @@ function renderStatsGrid($stats) {
  */
 function renderStatCard($stat) {
     $title = htmlspecialchars($stat['title'] ?? '');
-    $value = htmlspecialchars($stat['value'] ?? '0');
+    $value = htmlspecialchars($stat['value'] ?? '');
     $icon = htmlspecialchars($stat['icon'] ?? 'fas fa-chart-line');
     $type = htmlspecialchars($stat['type'] ?? 'primary');
     $change = htmlspecialchars($stat['change'] ?? '');
@@ -127,7 +127,7 @@ function renderComparisonCard($title, $data) {
     
     foreach ($data as $item) {
         $label = htmlspecialchars($item['label'] ?? '');
-        $value = $item['value'] ?? 0;
+        $value = $item['value'] ?? '';
         $color = htmlspecialchars($item['color'] ?? 'var(--primary-color)');
         $percentage = $total > 0 ? round(($value / $total) * 100) : 0;
         

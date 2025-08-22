@@ -78,7 +78,7 @@ if (isset($_GET['ajax'])) {
 
 			$pdo->beginTransaction();
 			try {
-				$subtotal = 0.0;
+				$subtotal = 0.0; // Sera calculé dynamiquement
 				// Vérification et calcul du sous-total
 				foreach ($items as $it) {
 					$productId = (int)($it['product_id'] ?? 0);
@@ -103,7 +103,7 @@ if (isset($_GET['ajax'])) {
 					$subtotal += $price * $qty;
 				}
 
-				$discountAmount = 0.0;
+				$discountAmount = 0.0; // Sera calculé dynamiquement
 				if ($discountType === 'percent') {
 					$discountAmount = round($subtotal * min(100.0, $discountValue) / 100.0, 2);
 				} elseif ($discountType === 'amount') {
@@ -193,7 +193,7 @@ ob_start();
 							<option value="percent">%</option>
 							<option value="amount">Montant</option>
 						</select>
-						<input type="number" id="discountValue" class="form-control" min="0" step="0.01" placeholder="0">
+						<input type="number" id="discountValue" class="form-control" min="0" step="0.01" placeholder="">
 					</div>
 				</div>
 				<div class="control-row">
@@ -264,7 +264,7 @@ function updateTotal() {
 	const subtotal = computeSubtotal();
 	const type = document.getElementById('discountType').value;
 	const val = parseFloat(document.getElementById('discountValue').value || '0');
-	let discount = 0;
+	let discount = 0; // Sera calculé dynamiquement
 	if (type === 'percent') discount = subtotal * Math.min(100, Math.max(0, val)) / 100;
 	if (type === 'amount') discount = Math.min(subtotal, Math.max(0, val));
 	const total = Math.max(0, subtotal - discount);

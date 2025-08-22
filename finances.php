@@ -7,11 +7,10 @@
 
 session_start();
 
-// Simulation de session utilisateur si nécessaire
-if (!isset($_SESSION['username'])) {
-    $_SESSION['username'] = 'Admin';
-    $_SESSION['role'] = 'admin';
-    $_SESSION['user_id'] = 1;
+// Vérification de session requise
+if (empty($_SESSION['user_id']) || empty($_SESSION['username']) || empty($_SESSION['role'])) {
+    header('Location: login.php');
+    exit;
 }
 
 require_once __DIR__ . '/config/config.php';
@@ -294,6 +293,14 @@ class FinancesManager {
      * Récupère les indicateurs financiers
      */
     public function getFinancialIndicators() {
+        // Initialisation des variables avec des valeurs par défaut
+        $totalDepensesMois = 0;
+        $totalDepensesAnnee = 0;
+        $totalRecettesMois = 0;
+        $totalRecettesAnnee = 0;
+        $categorieMax = null;
+        $nombreDepenses = 0;
+        
         try {
             $currentMonth = date('Y-m');
             $currentYear = date('Y');
@@ -317,7 +324,7 @@ class FinancesManager {
                 $stmt->execute([$currentMonth]);
                 $totalRecettesMois = $stmt->fetchColumn() ?: 0;
             } catch (Throwable $e) {
-                $totalRecettesMois = 0;
+                $totalRecettesMois = 0; // Valeur par défaut en cas d'erreur
             }
 
             // Recettes cumulées cette année
@@ -327,7 +334,7 @@ class FinancesManager {
                 $stmt->execute([$currentYear]);
                 $totalRecettesAnnee = $stmt->fetchColumn() ?: 0;
             } catch (Throwable $e) {
-                $totalRecettesAnnee = 0;
+                $totalRecettesAnnee = 0; // Valeur par défaut en cas d'erreur
             }
             
             // Catégorie la plus coûteuse ce mois
@@ -361,14 +368,14 @@ class FinancesManager {
         } catch (PDOException $e) {
             error_log("Erreur getFinancialIndicators: " . $e->getMessage());
             return [
-                'total_depenses_mois' => 0,
-                'total_depenses_annee' => 0,
-                'total_recettes_mois' => 0,
-                'total_recettes_annee' => 0,
-                'benefice_net_mois' => 0,
-                'benefice_net_annee' => 0,
-                'categorie_max' => null,
-                'nombre_depenses' => 0
+                'total_depenses_mois' => (float)$totalDepensesMois,
+                'total_depenses_annee' => (float)$totalDepensesAnnee,
+                'total_recettes_mois' => (float)$totalRecettesMois,
+                'total_recettes_annee' => (float)$totalRecettesAnnee,
+                'benefice_net_mois' => (float)($totalRecettesMois - $totalDepensesMois),
+                'benefice_net_annee' => (float)($totalRecettesAnnee - $totalDepensesAnnee),
+                'categorie_max' => $categorieMax,
+                'nombre_depenses' => $nombreDepenses
             ];
         }
     }
@@ -438,7 +445,7 @@ class FinancesManager {
         $html .= '<table border="1" cellpadding="5">';
         $html .= '<tr><th>Date</th><th>Description</th><th>Montant</th><th>Catégorie</th><th>Fournisseur</th></tr>';
         
-        $total = 0;
+        $total = 0; // Sera calculé dynamiquement
         foreach ($expenses as $expense) {
             $html .= '<tr>';
             $html .= '<td>' . date('d/m/Y', strtotime($expense['date'])) . '</td>';
@@ -1417,7 +1424,7 @@ document.getElementById('expenseForm').addEventListener('submit', function(e) {
     
     if (!isValid) {
         e.preventDefault();
-        alert('Erreurs de validation :\n' + errors.join('\n'));
+        			showError('Erreurs de validation :\n' + errors.join('\n'));
         return false;
     }
     

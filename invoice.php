@@ -20,6 +20,14 @@ $items = $pdo->prepare('SELECT si.product_id, si.quantity, si.price, st.nom_arti
 $items->execute([$id]);
 $rows = $items->fetchAll() ?: [];
 
+// Paiement (transactions)
+$txn = $pdo->prepare('SELECT payment_method, amount, reference, paid_at FROM transactions WHERE sale_id = ? ORDER BY paid_at ASC');
+$txn->execute([$id]);
+$txns = $txn->fetchAll() ?: [];
+$paymentMethod = $txns[0]['payment_method'] ?? null;
+$amountPaid = 0.0;
+foreach ($txns as $t) { $amountPaid += (float)($t['amount'] ?? 0); }
+
 $clientName = trim(($s['last_name'] ?? '') . ' ' . ($s['first_name'] ?? '')) ?: 'Client par défaut';
 $caissier = (string)($_SESSION['username'] ?? 'caissier');
 $date = date('d/m/Y H:i', strtotime((string)$s['created_at']));
@@ -75,7 +83,7 @@ $invoiceNo = sprintf('MS-%06d', (int)$s['id']);
             </tr>
         </thead>
         <tbody>
-            <?php $total = 0.0; foreach ($rows as $r): $st = (float)$r['price'] * (int)$r['quantity']; $total += $st; ?>
+            <?php $subtotal = 0.0; foreach ($rows as $r): $st = (float)$r['price'] * (int)$r['quantity']; $subtotal += $st; ?>
             <tr>
                 <td><?php echo htmlspecialchars($r['nom_article'] ?? ''); ?></td>
                 <td><?php echo (int)$r['quantity']; ?></td>
@@ -86,8 +94,16 @@ $invoiceNo = sprintf('MS-%06d', (int)$s['id']);
         </tbody>
     </table>
 
+    <?php $saleTotal = (float)$s['total']; $discount = max(0.0, $subtotal - $saleTotal); ?>
     <div class="totals">
-        <div style="font-size: 14px;">Total: <strong><?php echo number_format((float)$s['total'], 2, ',', ' '); ?> €</strong></div>
+        <div style="font-size: 14px;">Sous-total: <strong><?php echo number_format($subtotal, 2, ',', ' '); ?> €</strong></div>
+        <?php if ($discount > 0): ?>
+        <div style="font-size: 14px;">Remise: <strong>-<?php echo number_format($discount, 2, ',', ' '); ?> €</strong></div>
+        <?php endif; ?>
+        <div style="font-size: 16px; margin-top:4px;">Total à payer: <strong><?php echo number_format($saleTotal, 2, ',', ' '); ?> €</strong></div>
+        <?php if ($paymentMethod): ?>
+        <div style="font-size: 12px; color:#444; margin-top:6px;">Mode de paiement: <strong><?php echo htmlspecialchars($paymentMethod); ?></strong> • Encaissé: <strong><?php echo number_format($amountPaid, 2, ',', ' '); ?> €</strong></div>
+        <?php endif; ?>
     </div>
 
     <div class="footer">

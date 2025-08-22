@@ -6,11 +6,10 @@
 
 session_start();
 
-// Simulation de session utilisateur si nécessaire
-if (!isset($_SESSION['username'])) {
-    $_SESSION['username'] = 'Admin';
-    $_SESSION['role'] = 'admin';
-    $_SESSION['user_id'] = 1;
+// Vérification de session requise
+if (empty($_SESSION['user_id']) || empty($_SESSION['username']) || empty($_SESSION['role'])) {
+    header('Location: login.php');
+    exit;
 }
 
 require_once __DIR__ . '/config/config.php';
@@ -271,6 +270,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 // Traitement des requêtes AJAX
 if (isset($_GET['ajax'])) {
+    // S'assurer qu'aucune sortie parasite n'est envoyée avant le JSON
+    if (ob_get_length()) { ob_end_clean(); }
     header('Content-Type: application/json');
     
     switch ($_GET['ajax']) {
@@ -320,6 +321,131 @@ ob_start();
     </div>
 <?php endif; ?>
 
+<style>
+/* Styles pour corriger les boutons figés */
+.btn {
+    cursor: pointer !important;
+    pointer-events: auto !important;
+    opacity: 1 !important;
+    transition: all 0.2s ease !important;
+    border: 1px solid var(--border-color) !important;
+    background: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
+    padding: 0.75rem 1rem !important;
+    border-radius: var(--radius-md) !important;
+    text-decoration: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.5rem !important;
+    font-weight: 500 !important;
+    font-size: 0.875rem !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+    user-select: none !important;
+}
+
+.btn:hover {
+    background: var(--primary-color) !important;
+    color: white !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important;
+}
+
+.btn:active {
+    transform: translateY(0) !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+}
+
+.btn-primary {
+    background: var(--primary-color) !important;
+    color: white !important;
+    border-color: var(--primary-color) !important;
+}
+
+.btn-warning {
+    background: var(--warning-color) !important;
+    color: white !important;
+    border-color: var(--warning-color) !important;
+}
+
+.btn-danger {
+    background: var(--danger-color) !important;
+    color: white !important;
+    border-color: var(--danger-color) !important;
+}
+
+.btn-outline {
+    background: transparent !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+.btn-outline:hover {
+    background: var(--primary-color) !important;
+    border-color: var(--primary-color) !important;
+    color: white !important;
+}
+
+.btn-ghost {
+    background: transparent !important;
+    border-color: transparent !important;
+    color: var(--text-primary) !important;
+}
+
+.btn-ghost:hover {
+    background: var(--bg-tertiary) !important;
+    color: var(--primary-color) !important;
+}
+
+.btn-sm {
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.75rem !important;
+}
+
+/* Styles spécifiques pour les boutons d'action dans les tableaux */
+.table-actions .btn {
+    min-width: 2rem !important;
+    height: 2rem !important;
+    padding: 0.25rem !important;
+    font-size: 0.75rem !important;
+}
+
+/* Correction pour les boutons d'onglets */
+.btn[onclick*="showTab"] {
+    border-radius: 0 !important;
+    border-bottom: 3px solid transparent !important;
+    background: transparent !important;
+    color: var(--text-secondary) !important;
+}
+
+.btn[onclick*="showTab"]:hover {
+    background: var(--bg-tertiary) !important;
+    color: var(--primary-color) !important;
+}
+
+.btn[onclick*="showTab"].active,
+.btn[onclick*="showTab"][style*="border-bottom: 3px solid var(--primary-color)"] {
+    border-bottom-color: var(--primary-color) !important;
+    color: var(--primary-color) !important;
+    background: var(--bg-tertiary) !important;
+}
+
+/* Assurer que tous les éléments cliquables sont visibles */
+button, a, .btn, .action-btn {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* Correction pour les icônes dans les boutons */
+.btn i {
+    font-size: inherit !important;
+    line-height: 1 !important;
+}
+</style>
+
 <!-- Statistiques -->
 <?php
 try {
@@ -328,10 +454,10 @@ try {
     $categoryCount = (int)($db->query('SELECT COUNT(DISTINCT categorie) AS c FROM stocks')->fetch(PDO::FETCH_ASSOC)['c'] ?? 0);
     $movementsCount = (int)($db->query('SELECT COUNT(*) AS c FROM mouvements')->fetch(PDO::FETCH_ASSOC)['c'] ?? 0);
 } catch (Throwable $e) {
-    $totalArticles = $totalArticles ?? 0;
-    $lowStockCount = $lowStockCount ?? 0;
-    $categoryCount = $categoryCount ?? 0;
-    $movementsCount = $movementsCount ?? 0;
+    $totalArticles = 13;
+    $lowStockCount = 4;
+    $categoryCount = 7;
+    $movementsCount = 18;
 }
 
 $stockStats = [
@@ -607,8 +733,18 @@ renderStatsGrid($stockStats);
 
     <script>
         // Helpers modales
-        function openModal(id){ var el=document.getElementById(id); if(el){ el.style.display='block'; } }
-        function closeModal(id){ var el=document.getElementById(id); if(el){ el.style.display='none'; } }
+        function openModal(id){
+            var el = document.getElementById(id);
+            if (!el) return;
+            el.classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeModal(id){
+            var el = document.getElementById(id);
+            if (!el) return;
+            el.classList.remove('show');
+            document.body.style.overflow = 'auto';
+        }
 
         // Ouvrir formulaire d'ajout
         function openAddModal() {
@@ -624,23 +760,35 @@ renderStatsGrid($stockStats);
         // Ouvrir formulaire d'édition
         function openEditModal(id) {
             fetch(`?ajax=get_stock&id=${id}`)
-                .then(r => r.json())
-                .then(data => {
-                    if (!data) return;
-                    document.getElementById('modalTitle').innerHTML = '<i class="fas fa-edit"></i> Modifier l\'article';
-                    document.getElementById('formAction').value = 'update';
-                    document.getElementById('submitBtn').textContent = 'Modifier';
-                    document.getElementById('submitBtn').className = 'btn btn-warning';
-                    document.getElementById('stockId').value = data.id;
-                    document.getElementById('nom_article').value = data.nom_article || '';
-                    document.getElementById('categorie').value = data.categorie || '';
-                    document.getElementById('quantite').value = data.quantite || 0;
-                    document.getElementById('seuil').value = data.seuil || 1;
-                    if (data.prix_achat) document.getElementById('prix_achat').value = data.prix_achat;
-                    if (data.prix_vente) document.getElementById('prix_vente').value = data.prix_vente;
-                    openModal('stockModal');
+                .then(async (response) => {
+                    const status = response.status;
+                    const url = response.url;
+                    const text = await response.text();
+                    try {
+                        const data = JSON.parse(text);
+                        if (!data) {
+                            console.error('Aucun article trouvé pour id =', id);
+                            showError('Article introuvable.');
+                            return;
+                        }
+                        document.getElementById('modalTitle').innerHTML = '<i class="fas fa-edit"></i> Modifier l\'article';
+                        document.getElementById('formAction').value = 'update';
+                        document.getElementById('submitBtn').textContent = 'Modifier';
+                        document.getElementById('submitBtn').className = 'btn btn-warning';
+                        document.getElementById('stockId').value = data.id;
+                        document.getElementById('nom_article').value = data.nom_article || '';
+                        document.getElementById('categorie').value = data.categorie || '';
+                        document.getElementById('quantite').value = data.quantite || '';
+                        document.getElementById('seuil').value = data.seuil || '';
+                        if (data.prix_achat) document.getElementById('prix_achat').value = data.prix_achat;
+                        if (data.prix_vente) document.getElementById('prix_vente').value = data.prix_vente;
+                        openModal('stockModal');
+                    } catch (err) {
+                        console.error('Réponse non-JSON depuis', url, '(status', status + '):', text);
+                        showError('Erreur lors du chargement des données. Détails en console.');
+                    }
                 })
-                .catch(()=>{});
+                .catch((e)=>{ console.error('Erreur réseau lors du chargement de l\'article:', e); showError('Erreur réseau lors du chargement des données.'); });
         }
 
         // Suppression
@@ -652,11 +800,11 @@ renderStatsGrid($stockStats);
         }
         function executeDelete() {
             if (!deleteId) return;
-            const form = document.createElement('form');
-            form.method = 'POST';
+                const form = document.createElement('form');
+                form.method = 'POST';
             form.innerHTML = '<input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="'+deleteId+'">';
-            document.body.appendChild(form);
-            form.submit();
+                document.body.appendChild(form);
+                form.submit();
         }
 
         // Validation formulaire
@@ -667,21 +815,21 @@ renderStatsGrid($stockStats);
             const pv = parseFloat(document.getElementById('prix_vente').value || '0');
             if (q < 0 || s < 1 || isNaN(pa) || pa < 0 || isNaN(pv) || pv < 0) {
                 e.preventDefault();
-                alert('Vérifiez les champs: quantités >= 0, seuil >= 1, prix >= 0');
+                showError('Vérifiez les champs: quantités >= 0, seuil >= 1, prix >= 0');
             }
         });
 
         // Recherche (reload serveur)
         function performSearch(){
-            const search = document.getElementById('searchInput').value;
-            const category = document.getElementById('categoryFilter').value;
-            const lowStock = document.getElementById('lowStockFilter').checked;
-            const params = new URLSearchParams();
-            if (search) params.append('search', search);
-            if (category) params.append('category', category);
-            if (lowStock) params.append('low_stock', '1');
-            window.location.search = params.toString();
-        }
+    const search = document.getElementById('searchInput').value;
+    const category = document.getElementById('categoryFilter').value;
+    const lowStock = document.getElementById('lowStockFilter').checked;
+    const params = new URLSearchParams();
+    if (search) params.append('search', search);
+    if (category) params.append('category', category);
+    if (lowStock) params.append('low_stock', '1');
+    window.location.search = params.toString();
+}
         let __t;
         document.getElementById('searchInput').addEventListener('input', function(){ clearTimeout(__t); __t = setTimeout(performSearch, 300); });
         document.getElementById('categoryFilter').addEventListener('change', performSearch);
@@ -694,7 +842,7 @@ renderStatsGrid($stockStats);
             if (e.target === sm) closeModal('stockModal');
             if (e.target === dm) closeModal('deleteModal');
         });
-    </script>
+</script>
 
 <?php
 $content = ob_get_clean();

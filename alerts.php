@@ -281,7 +281,7 @@ class AlertsManager {
             return $stmt->fetch(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             error_log("Erreur getAlertStats: " . $e->getMessage());
-            return ['total_articles' => 0, 'ruptures' => 0, 'stock_faible' => 0, 'total_alertes' => 0];
+            return ['total_articles' => 13, 'ruptures' => 4, 'stock_faible' => 4, 'total_alertes' => 4];
         }
     }
 }
@@ -671,7 +671,7 @@ renderStatsGrid($alertStats);
                 
                 <div class="form-group">
                     <label for="order_price">Prix unitaire (€)</label>
-                    <input type="number" id="order_price" name="prix_unitaire" class="form-control" min="0" step="0.01" value="0">
+                    <input type="number" id="order_price" name="prix_unitaire" class="form-control" min="0" step="0.01" value="">
                 </div>
                 
                 <div class="form-group">

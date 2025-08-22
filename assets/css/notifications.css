@@ -1,0 +1,181 @@
+/**
+ * Styles globaux pour les notifications toast
+ * Système de notifications unifié pour toute l'application Scolaria
+ */
+
+/* Conteneur des notifications */
+.toast-container {
+    z-index: 1080 !important;
+    pointer-events: none;
+}
+
+.toast-container .toast {
+    pointer-events: auto;
+}
+
+/* Styles des notifications toast */
+.toast {
+    border: none !important;
+    border-radius: 0.75rem !important;
+    box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15) !important;
+    animation: slideInRight 0.3s ease-out !important;
+    min-width: 300px !important;
+    max-width: 400px !important;
+}
+
+.toast.fade-out {
+    animation: slideOutRight 0.3s ease-in forwards !important;
+}
+
+/* Animations d'entrée et de sortie */
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+/* Animation de slide depuis le haut (alternative) */
+@keyframes slideInTop {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutTop {
+    from {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+}
+
+/* Corps de la notification */
+.toast-body {
+    font-weight: 500 !important;
+    padding: 1rem 1.25rem !important;
+    font-size: 0.95rem !important;
+    line-height: 1.4 !important;
+}
+
+/* Bouton de fermeture */
+.btn-close {
+    opacity: 0.8 !important;
+    transition: opacity 0.2s ease !important;
+    filter: brightness(0) invert(1) !important;
+}
+
+.btn-close:hover {
+    opacity: 1 !important;
+    transform: scale(1.1) !important;
+}
+
+/* Icônes dans les notifications */
+.toast-body i {
+    font-size: 1.1rem !important;
+    width: 20px !important;
+    text-align: center !important;
+}
+
+/* Couleurs spécifiques pour chaque type */
+.toast.text-bg-success {
+    background: linear-gradient(135deg, #28a745, #20c997) !important;
+}
+
+.toast.text-bg-danger {
+    background: linear-gradient(135deg, #dc3545, #e74c3c) !important;
+}
+
+.toast.text-bg-warning {
+    background: linear-gradient(135deg, #ffc107, #fd7e14) !important;
+    color: #212529 !important;
+}
+
+.toast.text-bg-warning .btn-close {
+    filter: brightness(0) !important;
+}
+
+.toast.text-bg-info {
+    background: linear-gradient(135deg, #17a2b8, #6f42c1) !important;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .toast-container {
+        top: 0.5rem !important;
+        right: 0.5rem !important;
+        left: 0.5rem !important;
+    }
+    
+    .toast {
+        min-width: auto !important;
+        max-width: none !important;
+        width: 100% !important;
+    }
+}
+
+/* Animation de pulse pour attirer l'attention */
+.toast.attention {
+    animation: slideInRight 0.3s ease-out, pulse 2s infinite !important;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15);
+    }
+    50% {
+        box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15), 0 0 0 10px rgba(255,255,255,0.1);
+    }
+    100% {
+        box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15);
+    }
+}
+
+/* Styles pour les notifications empilées */
+.toast-container .toast + .toast {
+    margin-top: 0.5rem !important;
+}
+
+/* Animation de fade pour les notifications existantes */
+.toast.show {
+    opacity: 1 !important;
+    transition: opacity 0.3s ease !important;
+}
+
+/* Support pour les thèmes sombres */
+@media (prefers-color-scheme: dark) {
+    .toast {
+        box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.3) !important;
+    }
+    
+    .toast.text-bg-warning {
+        color: #fff !important;
+    }
+    
+    .toast.text-bg-warning .btn-close {
+        filter: brightness(0) invert(1) !important;
+    }
+}

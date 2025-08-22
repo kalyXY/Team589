@@ -349,10 +349,10 @@ async function editClientById(id) {
 	try {
 		const res = await fetch('clients.php?ajax=get&id=' + encodeURIComponent(id));
 		const data = await res.json();
-		if (!data) { alert('Client introuvable'); return; }
+					if (!data) { showError('Client introuvable'); return; }
 		editClient(data);
 	} catch (e) {
-		alert('Erreur lors du chargement du client');
+		showError('Erreur lors du chargement du client');
 	}
 }
 

@@ -28,6 +28,9 @@ $additionalJS = $additionalJS ?? [];
     <!-- CSS Principal -->
     <link rel="stylesheet" href="assets/css/style.css">
     
+    <!-- CSS Notifications -->
+    <link rel="stylesheet" href="assets/css/notifications.css">
+    
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -116,6 +119,9 @@ $additionalJS = $additionalJS ?? [];
     
     <!-- JavaScript Principal -->
     <script src="assets/js/main.js"></script>
+    
+    <!-- JavaScript Notifications -->
+    <script src="assets/js/notifications.js"></script>
     
     <!-- JavaScript Additionnels -->
     <?php foreach ($additionalJS as $js): ?>
