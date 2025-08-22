@@ -64,6 +64,7 @@ if (isset($_GET['ajax'])) {
 		if ($_GET['ajax'] === 'checkout' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 			$raw = file_get_contents('php://input');
 			$data = json_decode($raw, true);
+			
 			$items = is_array($data['items'] ?? null) ? $data['items'] : [];
 			$clientId = isset($data['client_id']) && $data['client_id'] !== '' ? (int)$data['client_id'] : null;
 			$discountType = in_array(($data['discount_type'] ?? ''), ['percent','amount'], true) ? (string)$data['discount_type'] : null;
@@ -84,6 +85,7 @@ if (isset($_GET['ajax'])) {
 					$productId = (int)($it['product_id'] ?? 0);
 					$qty = max(1, (int)($it['quantity'] ?? 0));
 					$price = (float)($it['price'] ?? 0);
+					
 					if ($productId <= 0 || $qty <= 0 || $price < 0) {
 						throw new RuntimeException('Données article invalides');
 					}
@@ -300,7 +302,14 @@ function addToCart(id, name, price, stock) {
 	if (existing) {
 		if (existing.quantity < existing.max) { existing.quantity++; }
 	} else {
-		cart.push({ product_id: id, name, price: parseFloat(price || 0), quantity: 1, max: parseInt(stock || 0) });
+		const cartItem = { 
+			product_id: parseInt(id) || 0, 
+			name: name || '', 
+			price: parseFloat(price || 0), 
+			quantity: 1, 
+			max: parseInt(stock || 0) 
+		};
+		cart.push(cartItem);
 	}
 	renderCart();
 }
@@ -330,6 +339,7 @@ async function checkout() {
 	if (cart.length === 0) { showMsg('Panier vide', 'error'); return; }
 	// Vérifier les quantités
 	for (const it of cart) { if (it.quantity > it.max) { showMsg(`Stock insuffisant pour ${it.name}`, 'error'); return; } }
+	
 	const btn = document.getElementById('checkoutBtn');
 	btn.disabled = true; btn.classList.add('loading');
 	try {
@@ -340,8 +350,10 @@ async function checkout() {
 			discount_value: parseFloat(document.getElementById('discountValue').value || '0'),
 			mode_paiement: document.getElementById('paymentMode').value
 		};
+		
 		const res = await fetch('pos.php?ajax=checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
 		const data = await res.json();
+		
 		if (!data.ok) { throw new Error(data.error || 'Erreur inconnue'); }
 		showMsg(`Vente validée. Ticket #${data.sale_id} - Total ${formatPrice(data.total)}`, 'success');
 		if (data.invoice_url) { window.open(data.invoice_url, '_blank'); }
