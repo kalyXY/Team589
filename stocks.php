@@ -16,6 +16,8 @@ require_once __DIR__ . '/config/config.php';
 require_once __DIR__ . '/config/db.php';
 require_once __DIR__ . '/components/stats-card.php';
 require_once __DIR__ . '/components/data-table.php';
+require_once __DIR__ . '/includes/notification_system.php';
+require_once __DIR__ . '/includes/stock_monitor.php';
 
 // Configuration de la page
 $currentPage = 'stocks';
@@ -104,6 +106,18 @@ class StockManager {
         if ($stmt->execute()) {
             $article_id = $this->conn->lastInsertId();
             $this->logMovement($article_id, 'ajout', "Ajout de $quantite $nom", 'admin');
+            
+            // Notifier du mouvement de stock
+            try {
+                StockMonitor::notifyStockMovement($article_id, "Ajout", $quantite, 'admin');
+                
+                // Vérifier si des alertes doivent être envoyées
+                StockMonitor::checkProductAfterUpdate($article_id);
+            } catch (Exception $e) {
+                // Log l'erreur mais ne pas faire échouer l'ajout
+                error_log('Erreur notification stock: ' . $e->getMessage());
+            }
+            
             return true;
         }
         return false;
@@ -132,6 +146,18 @@ class StockManager {
         if ($stmt->execute()) {
             $details = "Modification de $nom - Quantité: {$old_data['quantite']} → $quantite, Seuil: {$old_data['seuil']} → $seuil, Prix achat: " . ($old_data['prix_achat'] ?? '0') . " → $prix_achat, Prix vente: " . ($old_data['prix_vente'] ?? '0') . " → $prix_vente";
             $this->logMovement($id, 'modification', $details, 'admin');
+            
+            // Notifier du mouvement de stock
+            try {
+                StockMonitor::notifyStockMovement($id, "Modification", $quantite, 'admin');
+                
+                // Vérifier si des alertes doivent être envoyées
+                StockMonitor::checkProductAfterUpdate($id);
+            } catch (Exception $e) {
+                // Log l'erreur mais ne pas faire échouer la modification
+                error_log('Erreur notification stock: ' . $e->getMessage());
+            }
+            
             return true;
         }
         return false;
@@ -148,6 +174,24 @@ class StockManager {
 
         if ($article_info) {
             $this->logMovement($id, 'suppression', "Suppression de l'article: {$article_info['nom_article']} (Quantité: {$article_info['quantite']})", 'admin');
+            
+            // Notifier de la suppression
+            try {
+                NotificationSystem::createAdminNotification(
+                    "🗑️ Article supprimé",
+                    "L'article \"{$article_info['nom_article']}\" a été supprimé du stock",
+                    "warning",
+                    [
+                        'product_id' => $id,
+                        'product_name' => $article_info['nom_article'],
+                        'quantity' => $article_info['quantite'],
+                        'action' => 'suppression'
+                    ]
+                );
+            } catch (Exception $e) {
+                // Log l'erreur mais ne pas faire échouer la suppression
+                error_log('Erreur notification suppression: ' . $e->getMessage());
+            }
         }
 
         $query = "DELETE FROM " . $this->table_stocks . " WHERE id = :id";
