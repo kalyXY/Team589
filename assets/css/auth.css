@@ -231,6 +231,9 @@
     transition: all var(--transition-normal);
     position: relative;
     overflow: hidden;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    border: none;
+    color: white;
 }
 
 .btn-auth::before {
@@ -246,6 +249,11 @@
 
 .btn-auth:hover::before {
     left: 100%;
+}
+
+.btn-auth:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
 }
 
 .btn-auth.loading {
@@ -346,56 +354,40 @@
     flex-shrink: 0;
 }
 
-/* Informations de démonstration */
-.demo-credentials {
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
-    border: 1px solid rgba(102, 126, 234, 0.2);
-    border-radius: var(--radius-md);
-    padding: var(--spacing-lg);
+/* Footer d'authentification */
+.auth-footer {
     margin-top: var(--spacing-xl);
-    position: relative;
-    overflow: hidden;
+    padding-top: var(--spacing-lg);
+    border-top: 1px solid var(--border-color);
+    text-align: center;
 }
 
-.demo-credentials::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
-}
-
-.demo-credentials h4 {
+.auth-footer p {
     margin: 0 0 var(--spacing-sm) 0;
-    font-size: 0.9rem;
-    color: var(--primary-color);
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-    font-weight: 600;
-}
-
-.demo-credentials p {
-    margin: var(--spacing-xs) 0;
     font-size: 0.8rem;
     color: var(--text-muted);
-    line-height: 1.4;
 }
 
-.demo-credentials code {
-    background: rgba(0, 0, 0, 0.1);
-    padding: 0.2rem 0.4rem;
-    border-radius: var(--radius-xs);
-    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
-    font-size: 0.8rem;
-    color: var(--text-primary);
-    font-weight: 500;
+.auth-footer-links {
+    display: flex;
+    justify-content: center;
+    gap: var(--spacing-md);
+    flex-wrap: wrap;
 }
 
-[data-theme="dark"] .demo-credentials code {
-    background: rgba(255, 255, 255, 0.1);
+.footer-link {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 0.75rem;
+    transition: all var(--transition-fast);
+    padding: var(--spacing-xs);
+    border-radius: var(--radius-sm);
+}
+
+.footer-link:hover {
+    color: var(--primary-color);
+    background: rgba(102, 126, 234, 0.1);
+    text-decoration: none;
 }
 
 /* Alertes */
@@ -438,6 +430,26 @@
     flex-shrink: 0;
 }
 
+/* Styles pour les erreurs de validation */
+.form-control.error {
+    border-color: var(--error-color);
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.field-error {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--error-color);
+    font-size: 0.8rem;
+    margin-top: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.field-error i {
+    font-size: 0.9rem;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .auth-wrapper {
@@ -460,6 +472,11 @@
     .auth-links {
         flex-direction: column;
         text-align: center;
+    }
+    
+    .auth-footer-links {
+        flex-direction: column;
+        gap: var(--spacing-sm);
     }
 }
 
@@ -560,4 +577,20 @@ body.login-page {
 .login-page .auth-card {
     margin: auto;
     flex-shrink: 0;
+}
+
+/* Animations pour les éléments de fonctionnalités */
+.animate-slide-in {
+    animation: slideInUp 0.6s ease-out forwards;
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
