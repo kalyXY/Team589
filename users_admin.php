@@ -9,22 +9,57 @@ require_roles(['admin']);
 
 $pdo = Database::getConnection();
 
-// Évolutions schéma si nécessaire
-$pdo->exec("ALTER TABLE users
-	ADD COLUMN IF NOT EXISTS full_name VARCHAR(150) NULL AFTER username,
-	ADD COLUMN IF NOT EXISTS phone VARCHAR(30) NULL AFTER email,
-	ADD COLUMN IF NOT EXISTS status ENUM('actif','inactif') NOT NULL DEFAULT 'actif' AFTER role,
-	ADD COLUMN IF NOT EXISTS avatar_path VARCHAR(255) NULL AFTER status");
+// Fonction pour vérifier si une colonne existe
+function columnExists($pdo, $table, $column) {
+    try {
+        $stmt = $pdo->prepare("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?");
+        $stmt->execute([$table, $column]);
+        return $stmt->fetch() !== false;
+    } catch (PDOException $e) {
+        return false;
+    }
+}
+
+// Évolutions schéma si nécessaire - Vérifier et ajouter les colonnes manquantes
+$columns_to_check = [
+    'full_name' => "VARCHAR(150) NULL",
+    'phone' => "VARCHAR(30) NULL", 
+    'status' => "ENUM('actif','inactif') NOT NULL DEFAULT 'actif",
+    'avatar_path' => "VARCHAR(255) NULL"
+];
+
+foreach ($columns_to_check as $column => $definition) {
+    if (!columnExists($pdo, 'users', $column)) {
+        try {
+            $sql = "ALTER TABLE users ADD COLUMN $column $definition";
+            $pdo->exec($sql);
+        } catch (PDOException $e) {
+            // Ignorer les erreurs si la colonne existe déjà
+        }
+    }
+}
 
 // Vérifier que la table a bien toutes les colonnes nécessaires
 try {
 	$pdo->query("SELECT id, username, full_name, email, phone, password, role, status, avatar_path, created_at FROM users LIMIT 1");
 } catch (PDOException $e) {
-	// Si erreur, créer les colonnes manquantes
-	$pdo->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS full_name VARCHAR(150) NULL");
-	$pdo->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(30) NULL");
-	$pdo->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS status ENUM('actif','inactif') NOT NULL DEFAULT 'actif'");
-	$pdo->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_path VARCHAR(255) NULL");
+	// Si erreur, créer les colonnes manquantes une par une
+	$columns_to_add = [
+		'full_name' => "VARCHAR(150) NULL",
+		'phone' => "VARCHAR(30) NULL",
+		'status' => "ENUM('actif','inactif') NOT NULL DEFAULT 'actif",
+		'avatar_path' => "VARCHAR(255) NULL"
+	];
+	
+	foreach ($columns_to_add as $column => $definition) {
+		if (!columnExists($pdo, 'users', $column)) {
+			try {
+				$pdo->exec("ALTER TABLE users ADD COLUMN $column $definition");
+			} catch (PDOException $e) {
+				// Ignorer les erreurs
+			}
+		}
+	}
 }
 
 function sanitize(string $v, int $max = 255): string { $v = trim($v); return substr($v, 0, $max); }

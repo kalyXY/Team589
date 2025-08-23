@@ -45,12 +45,7 @@ CREATE TABLE `categories` (
 -- Données de démonstration pour la table `categories`
 --
 
-INSERT INTO `categories` (`id`, `nom`, `description`, `couleur`, `icone`, `type`, `active`) VALUES
-(1, 'Fournitures scolaires', 'Achats de fournitures pour les élèves', '#28a745', 'fas fa-pencil-alt', 'depense', 1),
-(2, 'Équipements', 'Matériel et équipements divers', '#17a2b8', 'fas fa-tools', 'depense', 1),
-(3, 'Transport', 'Frais de transport et déplacements', '#ffc107', 'fas fa-bus', 'depense', 1),
-(4, 'Maintenance', 'Réparations et maintenance', '#dc3545', 'fas fa-wrench', 'depense', 1),
-(5, 'Ventes', 'Revenus des ventes', '#28a745', 'fas fa-cash-register', 'recette', 1);
+-- Table vide - données supprimées pour démarrage propre
 
 -- --------------------------------------------------------
 
@@ -79,11 +74,7 @@ CREATE TABLE `notifications` (
 -- Données de démonstration pour la table `notifications`
 --
 
-INSERT INTO `notifications` (`user_id`, `title`, `message`, `type`, `is_read`, `created_at`) VALUES
-(1, 'Bienvenue sur Scolaria', 'Votre compte a été configuré avec succès. Vous pouvez maintenant utiliser toutes les fonctionnalités de l\'application.', 'info', 0, NOW()),
-(1, 'Stock faible détecté', 'Le stock de "Cahiers 96 pages" est faible (quantité: 5). Veuillez commander de nouveaux stocks.', 'warning', 0, NOW()),
-(1, 'Nouvelle vente enregistrée', 'Une vente de 45.50 $ a été enregistrée avec succès. Ticket #2024-001.', 'success', 0, NOW()),
-(1, 'Maintenance prévue', 'Une maintenance est prévue le 15 décembre de 22h00 à 02h00. L\'application sera temporairement indisponible.', 'info', 0, NOW());
+-- Table vide - données supprimées pour démarrage propre
 
 -- --------------------------------------------------------
 
@@ -123,16 +114,7 @@ CREATE TABLE `budgets` (
 -- Déchargement des données de la table `budgets`
 --
 
-INSERT INTO `budgets` (`id`, `mois`, `annee`, `montant_prevu`, `categorie_id`, `notes`, `created_by`, `created_at`, `updated_at`) VALUES
-(1, 8, 2025, 1000.00, NULL, 'Budget de test', 'admin', '2025-08-20 18:58:10', '2025-08-20 18:58:10'),
-(2, 1, 2025, 1000.00, 1, 'Budget fournitures janvier 2025', 'admin', '2025-08-20 18:43:37', '2025-08-20 18:43:37'),
-(3, 1, 2025, 500.00, 2, 'Budget maintenance janvier 2025', 'admin', '2025-08-20 18:43:37', '2025-08-20 18:43:37'),
-(4, 1, 2025, 3000.00, 3, 'Budget investissement janvier 2025', 'admin', '2025-08-20 18:43:37', '2025-08-20 18:43:37'),
-(5, 2, 2025, 1200.00, 1, 'Budget fournitures février 2025', 'admin', '2025-08-20 18:43:37', '2025-08-20 18:43:37'),
-(6, 2, 2025, 400.00, 2, 'Budget maintenance février 2025', 'admin', '2025-08-20 18:43:37', '2025-08-20 18:43:37'),
-(7, 3, 2025, 800.00, 1, 'Budget fournitures mars 2025', 'admin', '2025-08-20 18:43:37', '2025-08-20 18:43:37'),
-(8, 4, 2025, 600.00, 1, 'Budget fournitures avril 2025', 'admin', '2025-08-20 18:43:37', '2025-08-20 18:43:37'),
-(9, 5, 2025, 900.00, 1, 'Budget fournitures mai 2025', 'admin', '2025-08-20 18:43:37', '2025-08-20 18:43:37');
+-- Table vide - données supprimées pour démarrage propre
 
 -- --------------------------------------------------------
 
@@ -158,18 +140,7 @@ CREATE TABLE `clients` (
 -- Déchargement des données de la table `clients`
 --
 
-INSERT INTO `clients` (`id`, `first_name`, `last_name`, `phone`, `email`, `address`, `client_type`, `notes`, `created_at`, `updated_at`) VALUES
-(1, 'Marie', 'Dubois', '+243 81 234 5678', 'marie.dubois@email.com', '123 Avenue Kasavubu, Kinshasa', 'parent', 'Mère de 2 enfants en primaire', '2025-08-21 11:14:44', '2025-08-21 11:14:44'),
-(2, 'Jean', 'Mukendi', '+243 82 345 6789', 'jean.mukendi@email.com', '456 Boulevard Lumumba, Gombe', 'parent', 'Père de 3 enfants', '2025-08-21 11:14:44', '2025-08-21 11:14:44'),
-(3, 'Sophie', 'Tshimanga', '+243 83 456 7890', 'sophie.tshimanga@email.com', '789 Rue de la Paix, Lemba', 'acheteur_regulier', 'Achète régulièrement des fournitures', '2025-08-21 11:14:44', '2025-08-21 11:14:44'),
-(4, 'Pierre', 'Kabongo', '+243 84 567 8901', 'pierre.kabongo@email.com', '321 Avenue Mobutu, Kinshasa', 'parent', 'Parent délégué de classe', '2025-08-21 11:14:44', '2025-08-21 11:14:44'),
-(5, 'Grace', 'Mbuyi', '+243 85 678 9012', 'grace.mbuyi@email.com', '654 Rue Victoire, Matete', 'parent', 'Mère célibataire, 1 enfant', '2025-08-21 11:14:44', '2025-08-21 11:14:44'),
-(6, 'David', 'Nkomo', '+243 86 789 0123', 'david.nkomo@email.com', '987 Boulevard Triomphal, Ngaliema', 'acheteur_regulier', 'Professeur, achète pour sa classe', '2025-08-21 11:14:44', '2025-08-21 11:14:44'),
-(7, 'Esther', 'Kalala', '+243 87 890 1234', 'esther.kalala@email.com', '147 Avenue Liberation, Bandalungwa', 'parent', 'Mère de jumeaux', '2025-08-21 11:14:44', '2025-08-21 11:14:44'),
-(8, 'Joseph', 'Mwamba', '+243 88 901 2345', 'joseph.mwamba@email.com', '258 Rue Université, Lemba', 'autre', 'Directeur d\'école partenaire', '2025-08-21 11:14:44', '2025-08-21 11:14:44'),
-(9, 'Chantal', 'Ilunga', '+243 89 012 3456', 'chantal.ilunga@email.com', '369 Avenue Kasa-Vubu, Barumbu', 'parent', 'Présidente association des parents', '2025-08-21 11:14:44', '2025-08-21 11:14:44'),
-(10, 'Emmanuel', 'Kasongo', '+243 90 123 4567', 'emmanuel.kasongo@email.com', '741 Boulevard du 30 Juin, Gombe', 'acheteur_regulier', 'Grossiste en fournitures scolaires', '2025-08-21 11:14:44', '2025-08-21 11:14:44'),
-(22, 'Peter', 'AKILIMALI', '0974473513', 'peter23xp@gmail.com', 'Q. BUJOVU AV. MBAYIKI', 'autre', NULL, '2025-08-21 13:25:30', '2025-08-21 13:25:30');
+-- Table vide - données supprimées pour démarrage propre
 
 -- --------------------------------------------------------
 
@@ -195,11 +166,7 @@ CREATE TABLE `commandes` (
 -- Déchargement des données de la table `commandes`
 --
 
-INSERT INTO `commandes` (`id`, `article_id`, `fournisseur_id`, `quantite`, `prix_unitaire`, `statut`, `date_commande`, `date_livraison_prevue`, `notes`, `created_by`) VALUES
-(1, 1, 1, 100, 2.50, 'en attente', '2025-08-20 17:06:47', NULL, 'Commande urgente - stock critique', 'system'),
-(2, 2, 2, 50, 1.20, 'validée', '2025-08-20 17:06:47', NULL, 'Livraison prévue fin de semaine', 'system'),
-(3, 2, 4, 12, 123.00, 'en attente', '2025-08-21 10:45:03', NULL, 'TEST', 'admin'),
-(4, 2, 4, 12, 123.00, 'en attente', '2025-08-21 10:45:12', NULL, 'TEST', 'admin');
+-- Table vide - données supprimées pour démarrage propre
 
 -- --------------------------------------------------------
 
@@ -227,20 +194,7 @@ CREATE TABLE `depenses` (
 -- Déchargement des données de la table `depenses`
 --
 
-INSERT INTO `depenses` (`id`, `description`, `montant`, `date`, `categorie_id`, `facture_numero`, `fournisseur`, `notes`, `created_by`, `created_at`, `updated_at`) VALUES
-(1, 'Achat fournitures', 230.50, '2025-03-20', 1, 'FAC-2025-001', 'Papeterie Martin', 'Fournitures diverses', 'admin', '2025-08-20 12:50:10', '2025-08-20 12:50:10'),
-(2, 'Maintenance imprimantes', 120.00, '2025-04-20', 2, 'REP-2025-002', 'TechnoService', 'Réparation imprimante bureau', 'admin', '2025-08-20 12:50:10', '2025-08-20 12:50:10'),
-(3, 'Achat cahiers', 340.00, '2025-05-20', 1, 'FAC-2025-003', 'Fournitures Plus', 'Cahiers pour élèves', 'admin', '2025-08-20 12:50:10', '2025-08-20 12:50:10'),
-(4, 'Réassort marqueurs', 95.20, '2025-06-20', 1, 'FAC-2025-004', 'Papeterie Centrale', 'Marqueurs tableau', 'admin', '2025-08-20 12:50:10', '2025-08-20 12:50:10'),
-(5, 'Divers logistique', 180.00, '2025-07-20', 7, 'FAC-2025-005', 'Divers Fournisseurs', 'Frais divers', 'admin', '2025-08-20 12:50:10', '2025-08-20 12:50:10'),
-(6, 'Achat papier A4', 210.00, '2025-08-20', 1, 'FAC-2025-006', 'Papeterie Martin', 'Papier A4 blanc', 'admin', '2025-08-20 12:50:10', '2025-08-20 12:50:10'),
-(7, 'Achat de cahiers et stylos', 245.50, '2025-01-15', 1, 'FAC-2025-001', 'Papeterie Martin', 'Commande pour les classes de CP', 'admin', '2025-08-20 18:43:37', '2025-08-20 18:43:37'),
-(8, 'Réparation photocopieur', 180.00, '2025-01-18', 2, 'REP-2025-003', 'TechnoService', 'Remplacement tambour', 'admin', '2025-08-20 18:43:37', '2025-08-20 18:43:37'),
-(9, 'Ordinateurs portables (x5)', 2500.00, '2025-01-20', 3, 'INV-2025-012', 'InfoPlus', 'Pour la salle informatique', 'admin', '2025-08-20 18:43:37', '2025-08-20 18:43:37'),
-(10, 'Facture électricité janvier', 320.75, '2025-01-25', 5, 'EDF-2025-01', 'EDF', 'Consommation janvier 2025', 'admin', '2025-08-20 18:43:37', '2025-08-20 18:43:37'),
-(11, 'Formation premiers secours', 150.00, '2025-01-28', 4, 'FORM-2025-002', 'SecuriFormation', 'Formation obligatoire personnel', 'admin', '2025-08-20 18:43:37', '2025-08-20 18:43:37'),
-(12, 'Carburant bus scolaire', 95.30, '2025-01-30', 6, 'TOTAL-2025-015', 'Station Total', 'Plein mensuel', 'admin', '2025-08-20 18:43:37', '2025-08-20 18:43:37'),
-(13, 'Produits d\'entretien', 78.90, '2025-02-02', 7, 'NET-2025-004', 'CleanPro', 'Détergents et désinfectants', 'admin', '2025-08-20 18:43:37', '2025-08-20 18:43:37');
+-- Table vide - données supprimées pour démarrage propre
 
 -- --------------------------------------------------------
 
@@ -264,10 +218,7 @@ CREATE TABLE `fournisseurs` (
 -- Déchargement des données de la table `fournisseurs`
 --
 
-INSERT INTO `fournisseurs` (`id`, `nom`, `contact`, `email`, `telephone`, `adresse`, `created_at`, `updated_at`) VALUES
-(1, 'Fournitures Scolaires Plus', 'Marie Dubois', 'marie@fournitures-plus.fr', '01.23.45.67.89', '123 Rue de l\'École, 75001 Paris', '2025-08-20 17:06:47', '2025-08-20 17:06:47'),
-(2, 'Papeterie Centrale', 'Jean Martin', 'contact@papeterie-centrale.fr', '01.98.76.54.32', '456 Avenue des Fournitures, 69000 Lyon', '2025-08-20 17:06:47', '2025-08-20 17:06:47'),
-(4, 'Peter safari AKILIMALI', 'claude', 'peter23xp@gmail.com', '0974473513', 'Q. BUJOVU AV. MBAYIKI', '2025-08-20 17:12:48', '2025-08-20 17:12:48');
+-- Table vide - données supprimées pour démarrage propre
 
 -- --------------------------------------------------------
 
@@ -303,39 +254,7 @@ CREATE TABLE `mouvements` (
 -- Déchargement des données de la table `mouvements`
 --
 
-INSERT INTO `mouvements` (`id`, `article_id`, `action`, `details`, `utilisateur`, `date_mouvement`) VALUES
-(1, 1, 'ajout', 'Initialisation: Stylos bleus - Quantité: 120, Seuil: 50', 'admin', '2025-08-20 13:49:48'),
-(2, 2, 'ajout', 'Initialisation: Cahiers A4 - Quantité: 40, Seuil: 60', 'admin', '2025-08-20 13:49:48'),
-(3, 3, 'ajout', 'Initialisation: Marqueurs effaçables - Quantité: 15, Seuil: 30', 'admin', '2025-08-20 13:49:48'),
-(4, 4, 'ajout', 'Initialisation: Feuilles A3 - Quantité: 6, Seuil: 10', 'admin', '2025-08-20 13:49:48'),
-(5, 5, 'ajout', 'Initialisation: Cartouches impression - Quantité: 3, Seuil: 5', 'admin', '2025-08-20 13:49:48'),
-(8, 1, 'modification', 'Quantité mise à jour: stock vérifié', 'gestionnaire', '2025-08-20 13:49:48'),
-(9, 2, 'modification', 'Seuil d\'alerte ajusté de 60 à 50 unités', 'admin', '2025-08-20 13:49:48'),
-(10, 3, 'modification', 'Stock critique: commande urgente nécessaire', 'gestionnaire', '2025-08-20 13:49:48'),
-(11, 4, 'modification', 'Stock très faible: réassort immédiat requis', 'admin', '2025-08-20 13:49:48'),
-(12, 5, 'modification', 'Remplacement préventif des cartouches', 'gestionnaire', '2025-08-20 13:49:48'),
-(13, 6, 'ajout', 'Nouveau article ajouté: Calculatrices scientifiques - Quantité initiale: 25', 'admin', '2025-08-20 13:49:48'),
-(14, 7, 'ajout', 'Nouveau article ajouté: Règles 30cm - Quantité initiale: 45', 'admin', '2025-08-20 13:49:48'),
-(15, 8, 'ajout', 'Nouveau article ajouté: Livres de mathématiques - Quantité initiale: 80', 'admin', '2025-08-20 13:49:48'),
-(16, 9, 'ajout', 'Nouveau article ajouté: Chaises scolaires - Quantité initiale: 120', 'admin', '2025-08-20 13:49:48'),
-(17, 10, 'ajout', 'Nouveau article ajouté: Tableaux blancs - Quantité initiale: 8', 'admin', '2025-08-20 13:49:48'),
-(18, 11, 'ajout', 'Nouveau article ajouté: Projecteurs - Quantité initiale: 5', 'admin', '2025-08-20 13:49:48'),
-(19, 12, 'ajout', 'Nouveau article ajouté: Ordinateurs portables - Quantité initiale: 12', 'admin', '2025-08-20 13:49:48'),
-(20, 13, 'ajout', 'Nouveau article ajouté: Cahiers travaux pratiques - Quantité initiale: 200', 'admin', '2025-08-20 13:49:48'),
-(0, 6, 'suppression', 'Suppression de l\'article: Calculatrices scientifiques (Quantité: 25)', 'admin', '2025-08-22 12:33:19'),
-(0, 7, 'suppression', 'Suppression de l\'article: Règles 30cm (Quantité: 45)', 'admin', '2025-08-22 12:33:23'),
-(0, 8, 'suppression', 'Suppression de l\'article: Livres de mathématiques (Quantité: 80)', 'admin', '2025-08-22 12:33:28'),
-(0, 9, 'suppression', 'Suppression de l\'article: Chaises scolaires (Quantité: 120)', 'admin', '2025-08-22 12:33:31'),
-(0, 10, 'suppression', 'Suppression de l\'article: Tableaux blancs (Quantité: 8)', 'admin', '2025-08-22 12:33:34'),
-(0, 11, 'suppression', 'Suppression de l\'article: Projecteurs (Quantité: 5)', 'admin', '2025-08-22 12:33:37'),
-(0, 12, 'suppression', 'Suppression de l\'article: Ordinateurs portables (Quantité: 12)', 'admin', '2025-08-22 12:33:40'),
-(0, 13, 'suppression', 'Suppression de l\'article: Cahiers travaux pratiques (Quantité: 200)', 'admin', '2025-08-22 12:33:42'),
-(0, 1, 'suppression', 'Suppression de l\'article: Stylos bleus (Quantité: 120)', 'admin', '2025-08-22 12:33:45'),
-(0, 2, 'suppression', 'Suppression de l\'article: Cahiers A4 (Quantité: 40)', 'admin', '2025-08-22 12:33:49'),
-(0, 3, 'suppression', 'Suppression de l\'article: Marqueurs effaçables (Quantité: 15)', 'admin', '2025-08-22 12:33:51'),
-(0, 4, 'suppression', 'Suppression de l\'article: Feuilles A3 (Quantité: 6)', 'admin', '2025-08-22 12:33:54'),
-(0, 5, 'suppression', 'Suppression de l\'article: Cartouches impression (Quantité: 3)', 'admin', '2025-08-22 12:33:57'),
-(0, 0, 'ajout', 'Ajout de 50 Journal de classe', 'admin', '2025-08-22 12:43:29');
+-- Table vide - données supprimées pour démarrage propre
 
 -- --------------------------------------------------------
 
@@ -358,21 +277,18 @@ CREATE TABLE `roles_custom` (
 --
 
 CREATE TABLE `sales` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `client_id` int(11) DEFAULT NULL,
   `total` decimal(10,2) NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Déchargement des données de la table `sales`
 --
 
-INSERT INTO `sales` (`id`, `client_id`, `total`, `created_at`) VALUES
-(1, 1, 12.50, '2025-01-15 06:30:00'),
-(2, 1, 7.50, '2025-01-15 06:35:00'),
-(3, 1, 12.50, '2025-01-15 06:30:00'),
-(4, 1, 7.50, '2025-01-15 06:35:00');
+-- Table vide - données supprimées pour démarrage propre
 
 -- --------------------------------------------------------
 
@@ -393,8 +309,7 @@ CREATE TABLE `sales_items` (
 -- Déchargement des données de la table `sales_items`
 --
 
-INSERT INTO `sales_items` (`id`, `sale_id`, `product_id`, `quantity`, `price`) VALUES
-(1, 2, 1, 10, 0.75);
+-- Table vide - données supprimées pour démarrage propre
 
 -- --------------------------------------------------------
 
@@ -416,8 +331,7 @@ CREATE TABLE `school_settings` (
 -- Déchargement des données de la table `school_settings`
 --
 
-INSERT INTO `school_settings` (`id`, `school_name`, `address`, `phone`, `email`, `logo_path`, `updated_at`) VALUES
-(1, '', NULL, NULL, NULL, NULL, '2025-08-22 10:09:07');
+-- Table vide - données supprimées pour démarrage propre
 
 -- --------------------------------------------------------
 
@@ -459,8 +373,7 @@ CREATE TABLE `stocks` (
 -- Déchargement des données de la table `stocks`
 --
 
-INSERT INTO `stocks` (`id`, `nom_article`, `categorie`, `code_barres`, `prix_achat`, `quantite`, `seuil`, `created_at`, `updated_at`, `seuil_alerte`, `prix_vente`) VALUES
-(0, 'Journal de classe', 'Fourniture', NULL, 1.50, 50, 10, '2025-08-22 12:43:29', '2025-08-22 12:43:29', 10, 3.00);
+-- Table vide - données supprimées pour démarrage propre
 
 -- --------------------------------------------------------
 
@@ -479,8 +392,7 @@ CREATE TABLE `system_config` (
 -- Déchargement des données de la table `system_config`
 --
 
-INSERT INTO `system_config` (`id`, `min_stock_threshold`, `payment_modes`, `updated_at`) VALUES
-(1, 1, '[]', '2025-08-22 10:09:07');
+-- Table vide - données supprimées pour démarrage propre
 
 -- --------------------------------------------------------
 
@@ -554,34 +466,7 @@ INSERT INTO `users` (`id`, `username`, `full_name`, `email`, `phone`, `password`
 -- Structure de la vue `v_depenses_rapport`
 --
 
--- --------------------------------------------------------
 
---
--- Structure de la table `categories`
---
-
-CREATE TABLE `categories` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `nom` varchar(100) NOT NULL,
-  `description` text DEFAULT NULL,
-  `couleur` varchar(7) DEFAULT '#007bff',
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Déchargement des données de la table `categories`
---
-
-INSERT INTO `categories` (`id`, `nom`, `description`, `couleur`, `created_at`, `updated_at`) VALUES
-(1, 'Fournitures', 'Fournitures scolaires et de bureau', '#28a745', '2025-08-20 18:43:37', '2025-08-20 18:43:37'),
-(2, 'Maintenance', 'Maintenance et réparation d\'équipements', '#ffc107', '2025-08-20 18:43:37', '2025-08-20 18:43:37'),
-(3, 'Investissement', 'Achats d\'équipements et investissements', '#17a2b8', '2025-08-20 18:43:37', '2025-08-20 18:43:37'),
-(4, 'Formation', 'Formation du personnel', '#6f42c1', '2025-08-20 18:43:37', '2025-08-20 18:43:37'),
-(5, 'Services', 'Services publics (électricité, eau, etc.)', '#fd7e14', '2025-08-20 18:43:37', '2025-08-20 18:43:37'),
-(6, 'Transport', 'Transport et déplacements', '#e83e8c', '2025-08-20 18:43:37', '2025-08-20 18:43:37'),
-(7, 'Divers', 'Autres dépenses', '#6c757d', '2025-08-20 18:43:37', '2025-08-20 18:43:37');
 
 -- --------------------------------------------------------
 
@@ -627,7 +512,6 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW 
 -- Index pour la table `categories`
 --
 ALTER TABLE `categories`
-  ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `nom` (`nom`),
   ADD KEY `idx_categories_type` (`type`),
   ADD KEY `idx_categories_active` (`active`);
@@ -636,7 +520,6 @@ ALTER TABLE `categories`
 -- Index pour la table `notifications`
 --
 ALTER TABLE `notifications`
-  ADD PRIMARY KEY (`id`),
   ADD KEY `idx_notifications_user_id` (`user_id`),
   ADD KEY `idx_notifications_is_read` (`is_read`),
   ADD KEY `idx_notifications_created_at` (`created_at`),
@@ -646,7 +529,6 @@ ALTER TABLE `notifications`
 -- Index pour la table `alertes`
 --
 ALTER TABLE `alertes`
-  ADD PRIMARY KEY (`id`),
   ADD KEY `idx_alertes_stock_id` (`stock_id`),
   ADD KEY `idx_alertes_type` (`type`),
   ADD KEY `idx_alertes_created_at` (`created_at`);
@@ -655,7 +537,6 @@ ALTER TABLE `alertes`
 -- Index pour la table `budgets`
 --
 ALTER TABLE `budgets`
-  ADD PRIMARY KEY (`id`),
   ADD KEY `idx_budgets_mois_annee` (`mois`, `annee`),
   ADD KEY `idx_budgets_categorie_mois` (`categorie_id`, `mois`),
   ADD KEY `idx_budgets_created_by` (`created_by`);
@@ -664,7 +545,6 @@ ALTER TABLE `budgets`
 -- Index pour la table `clients`
 --
 ALTER TABLE `clients`
-  ADD PRIMARY KEY (`id`),
   ADD KEY `idx_clients_type` (`client_type`),
   ADD KEY `idx_clients_phone` (`phone`),
   ADD KEY `idx_clients_email` (`email`),
@@ -674,7 +554,6 @@ ALTER TABLE `clients`
 -- Index pour la table `commandes`
 --
 ALTER TABLE `commandes`
-  ADD PRIMARY KEY (`id`),
   ADD KEY `idx_commandes_statut` (`statut`),
   ADD KEY `idx_commandes_date_commande` (`date_commande`),
   ADD KEY `idx_commandes_date_livraison` (`date_livraison_prevue`),
@@ -684,7 +563,6 @@ ALTER TABLE `commandes`
 -- Index pour la table `depenses`
 --
 ALTER TABLE `depenses`
-  ADD PRIMARY KEY (`id`),
   ADD KEY `idx_depenses_date` (`date`),
   ADD KEY `idx_depenses_montant` (`montant`),
   ADD KEY `idx_depenses_created_by` (`created_by`),
@@ -694,13 +572,12 @@ ALTER TABLE `depenses`
 -- Index pour la table `fournisseurs`
 --
 ALTER TABLE `fournisseurs`
-  ADD PRIMARY KEY (`id`);
+  ADD KEY `idx_fournisseurs_nom` (`nom`);
 
 --
 -- Index pour la table `login_history`
 --
 ALTER TABLE `login_history`
-  ADD PRIMARY KEY (`id`),
   ADD KEY `user_id` (`user_id`),
   ADD KEY `logged_at` (`logged_at`);
 
@@ -708,44 +585,45 @@ ALTER TABLE `login_history`
 -- Index pour la table `mouvements`
 --
 ALTER TABLE `mouvements`
-  ADD PRIMARY KEY (`id`);
+  ADD KEY `idx_mouvements_article_id` (`article_id`),
+  ADD KEY `idx_mouvements_date` (`date_mouvement`);
 
 --
 -- Index pour la table `roles_custom`
 --
 ALTER TABLE `roles_custom`
-  ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `name` (`name`);
 
 --
 -- Index pour la table `sales`
 --
 ALTER TABLE `sales`
-  ADD PRIMARY KEY (`id`);
+  ADD KEY `idx_sales_client_id` (`client_id`),
+  ADD KEY `idx_sales_date` (`created_at`);
 
 --
 -- Index pour la table `sales_items`
 --
 ALTER TABLE `sales_items`
-  ADD PRIMARY KEY (`id`);
+  ADD KEY `idx_sales_items_sale_id` (`sale_id`),
+  ADD KEY `idx_sales_items_product_id` (`product_id`);
 
 --
 -- Index pour la table `school_settings`
 --
 ALTER TABLE `school_settings`
-  ADD PRIMARY KEY (`id`);
+  ADD KEY `idx_school_settings_name` (`school_name`);
 
 --
 -- Index pour la table `security_flags`
 --
 ALTER TABLE `security_flags`
-  ADD PRIMARY KEY (`flag`);
+  ADD KEY `idx_security_flags_flag` (`flag`);
 
 --
 -- Index pour la table `stocks`
 --
 ALTER TABLE `stocks`
-  ADD PRIMARY KEY (`id`),
   ADD KEY `idx_stocks_categorie` (`categorie`),
   ADD KEY `idx_stocks_quantite` (`quantite`),
   ADD KEY `idx_stocks_seuil` (`seuil`),
@@ -757,13 +635,14 @@ ALTER TABLE `stocks`
 -- Index pour la table `system_config`
 --
 ALTER TABLE `system_config`
-  ADD PRIMARY KEY (`id`);
+  ADD KEY `idx_system_config_id` (`id`);
 
 --
 -- Index pour la table `transactions`
 --
 ALTER TABLE `transactions`
-  ADD PRIMARY KEY (`id`);
+  ADD KEY `idx_transactions_sale_id` (`sale_id`),
+  ADD KEY `idx_transactions_payment_method` (`payment_method`);
 
 --
 -- Index pour la table `users`

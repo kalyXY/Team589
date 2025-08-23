@@ -5,11 +5,15 @@
  */
 
 // Configuration de la base de données
+// Configuration pour Laragon (par défaut)
 define('DB_HOST', 'localhost');
 define('DB_NAME', 'scolaria');
 define('DB_USER', 'root');
-define('DB_PASS', '');
+define('DB_PASS', ''); // Laragon utilise souvent un mot de passe vide par défaut
 define('DB_CHARSET', 'utf8mb4');
+
+// Si Laragon utilise un port différent, décommentez et modifiez :
+// define('DB_PORT', '3306');
 
 // Configuration de l'application
 define('APP_NAME', 'Scolaria - Gestion des Stocks');

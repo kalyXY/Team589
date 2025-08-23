@@ -154,7 +154,7 @@ $dashboardStats = [
         'change' => '+5.1%',
         'changeType' => 'positive',
         'subtitle' => 'Utilisateurs enregistrés',
-        'link' => '/users.php'
+        'link' => '/users_admin.php'
     ]
 ];
 
@@ -484,32 +484,145 @@ ob_start();
         </h3>
     </div>
     <div class="card-body">
-        <div class="alert alert-warning">
-            <i class="alert-icon fas fa-exclamation-triangle"></i>
-            <div>
-                <strong>Stock faible :</strong> Cahiers A4 (Quantité : 12)
-                <br><small>Seuil d'alerte : 20 unités</small>
-            </div>
-            <a href="stocks.php" class="btn btn-sm btn-warning">Réapprovisionner</a>
-        </div>
+        <?php
+        // Récupérer les vraies alertes de stock depuis la base de données
+        $stock_alerts = [];
+        $commandes_en_attente = [];
         
-        <div class="alert alert-danger">
-            <i class="alert-icon fas fa-times-circle"></i>
-            <div>
-                <strong>Rupture de stock :</strong> Stylos rouges
-                <br><small>Dernière sortie : il y a 2 jours</small>
-            </div>
-            <a href="alerts.php" class="btn btn-sm btn-primary">Commande urgente</a>
-        </div>
+        try {
+            // Alertes de stock faible et rupture
+            $sql_stock = "SELECT id, nom_article, categorie, quantite, seuil, seuil_alerte, updated_at 
+                         FROM stocks 
+                         WHERE quantite <= seuil_alerte 
+                         ORDER BY quantite ASC, nom_article ASC 
+                         LIMIT 5";
+            $stmt_stock = $pdo->query($sql_stock);
+            $stock_alerts = $stmt_stock->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Commandes en attente
+            $sql_commandes = "SELECT c.id, c.quantite, c.date_commande, c.date_livraison_prevue, 
+                                    s.nom_article, f.nom as fournisseur_nom
+                             FROM commandes c
+                             JOIN stocks s ON c.article_id = s.id
+                             JOIN fournisseurs f ON c.fournisseur_id = f.id
+                             WHERE c.statut = 'en attente'
+                             ORDER BY c.date_commande ASC
+                             LIMIT 3";
+            $stmt_commandes = $pdo->query($sql_commandes);
+            $commandes_en_attente = $stmt_commandes->fetchAll(PDO::FETCH_ASSOC);
+            
+        } catch (PDOException $e) {
+            // En cas d'erreur, on garde des alertes par défaut
+        }
         
-        <div class="alert alert-info">
-            <i class="alert-icon fas fa-info-circle"></i>
-            <div>
-                <strong>Commande en attente :</strong> Papier A3 (100 unités)
-                <br><small>Livraison prévue : 18/01/2024</small>
+        // Afficher les alertes de stock
+        if (!empty($stock_alerts)) {
+            foreach ($stock_alerts as $alert) {
+                $quantite = (int)$alert['quantite'];
+                $seuil = (int)$alert['seuil'];
+                $seuil_alerte = (int)$alert['seuil_alerte'];
+                
+                if ($quantite <= 0) {
+                    // Rupture de stock
+                    $alert_class = 'alert-danger';
+                    $alert_icon = 'fas fa-times-circle';
+                    $alert_title = 'Rupture de stock';
+                    $alert_message = "Quantité : 0 unités";
+                    $button_text = 'Commande urgente';
+                    $button_class = 'btn-primary';
+                } elseif ($quantite <= $seuil_alerte) {
+                    // Stock critique
+                    $alert_class = 'alert-danger';
+                    $alert_icon = 'fas fa-exclamation-triangle';
+                    $alert_title = 'Stock critique';
+                    $alert_message = "Quantité : $quantite unités (Seuil : $seuil_alerte)";
+                    $button_text = 'Commande urgente';
+                    $button_class = 'btn-primary';
+                } else {
+                    // Stock faible
+                    $alert_class = 'alert-warning';
+                    $alert_icon = 'fas fa-exclamation-triangle';
+                    $alert_title = 'Stock faible';
+                    $alert_message = "Quantité : $quantite unités (Seuil : $seuil)";
+                    $button_text = 'Réapprovisionner';
+                    $button_class = 'btn-warning';
+                }
+                
+                $last_update = new DateTime($alert['updated_at']);
+                $now = new DateTime();
+                $diff = $now->diff($last_update);
+                $time_ago = '';
+                
+                if ($diff->days > 0) {
+                    $time_ago = "il y a {$diff->days} jour" . ($diff->days > 1 ? 's' : '');
+                } elseif ($diff->h > 0) {
+                    $time_ago = "il y a {$diff->h} heure" . ($diff->h > 1 ? 's' : '');
+                } else {
+                    $time_ago = "à l'instant";
+                }
+                ?>
+                
+                <div class="alert <?= $alert_class ?>">
+                    <i class="alert-icon <?= $alert_icon ?>"></i>
+                    <div>
+                        <strong><?= $alert_title ?> :</strong> <?= htmlspecialchars($alert['nom_article']) ?>
+                        <br><small><?= $alert_message ?> - Dernière mise à jour : <?= $time_ago ?></small>
+                    </div>
+                    <a href="stocks.php?id=<?= $alert['id'] ?>" class="btn btn-sm <?= $button_class ?>"><?= $button_text ?></a>
+                </div>
+                
+                <?php
+            }
+        }
+        
+        // Afficher les commandes en attente
+        if (!empty($commandes_en_attente)) {
+            foreach ($commandes_en_attente as $commande) {
+                $date_commande = new DateTime($commande['date_commande']);
+                $date_livraison = $commande['date_livraison_prevue'] ? new DateTime($commande['date_livraison_prevue']) : null;
+                
+                $now = new DateTime();
+                $delai = $now->diff($date_commande);
+                $delai_text = '';
+                
+                if ($delai->days > 7) {
+                    $delai_text = "Commande en retard de " . ($delai->days - 7) . " jour(s)";
+                } elseif ($delai->days > 3) {
+                    $delai_text = "Commande en attente depuis " . $delai->days . " jour(s)";
+                } else {
+                    $delai_text = "Commande récente";
+                }
+                
+                $livraison_text = $date_livraison ? "Livraison prévue : " . $date_livraison->format('d/m/Y') : "Date de livraison non définie";
+                ?>
+                
+                <div class="alert alert-info">
+                    <i class="alert-icon fas fa-shopping-cart"></i>
+                    <div>
+                        <strong>Commande en attente :</strong> <?= htmlspecialchars($commande['nom_article']) ?> (<?= $commande['quantite'] ?> unités)
+                        <br><small><?= $delai_text ?> - <?= $livraison_text ?></small>
+                        <br><small>Fournisseur : <?= htmlspecialchars($commande['fournisseur_nom']) ?></small>
+                    </div>
+                    <a href="commandes.php?id=<?= $commande['id'] ?>" class="btn btn-sm btn-outline">Suivre</a>
+                </div>
+                
+                <?php
+            }
+        }
+        
+        // Si aucune alerte, afficher un message
+        if (empty($stock_alerts) && empty($commandes_en_attente)) {
+            ?>
+            <div class="alert alert-success">
+                <i class="alert-icon fas fa-check-circle"></i>
+                <div>
+                    <strong>Aucune alerte active</strong>
+                    <br><small>Tous vos stocks sont dans les normes et aucune commande urgente n'est en attente.</small>
+                </div>
             </div>
-            <a href="alerts.php" class="btn btn-sm btn-outline">Suivre</a>
-        </div>
+            <?php
+        }
+        ?>
     </div>
 </div>
 <!-- Tableau des activités récentes -->
