@@ -201,6 +201,84 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			$stmt->execute();
 			$toast = ['type' => 'success', 'message' => 'Toutes les sessions seront déconnectées.'];
 		}
+
+		if ($action === 'reset_auto_increment') {
+			$resetCount = 0;
+			
+			foreach ($autoIncrementTables as $table) {
+				try {
+					// Vérifier si la table existe
+					$stmt = $pdo->prepare("SHOW TABLES LIKE ?");
+					$stmt->execute([$table]);
+					
+					if ($stmt->rowCount() > 0) {
+						// Obtenir le nombre de lignes dans la table
+						$stmt = $pdo->prepare("SELECT COUNT(*) as count FROM `$table`");
+						$stmt->execute();
+						$rowCount = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+						
+						if ($rowCount == 0) {
+							// Table vide, réinitialiser l'auto-increment à 1
+							$stmt = $pdo->prepare("ALTER TABLE `$table` AUTO_INCREMENT = 1");
+							$stmt->execute();
+							$resetCount++;
+						} else {
+							// Table avec données, réorganiser les IDs
+							$stmt = $pdo->prepare("SET @rank = 0");
+							$stmt->execute();
+							
+							// Créer une table temporaire avec les nouveaux IDs
+							$stmt = $pdo->prepare("
+								CREATE TEMPORARY TABLE temp_$table AS 
+								SELECT *, (@rank := @rank + 1) as new_id 
+								FROM `$table` 
+								ORDER BY id
+							");
+							$stmt->execute();
+							
+							// Mettre à jour les IDs dans la table temporaire
+							$stmt = $pdo->prepare("
+								UPDATE temp_$table 
+								SET id = new_id
+							");
+							$stmt->execute();
+							
+							// Supprimer les anciennes données et insérer les nouvelles
+							$stmt = $pdo->prepare("DELETE FROM `$table`");
+							$stmt->execute();
+							
+							// Obtenir la structure de la table
+							$stmt = $pdo->prepare("DESCRIBE `$table`");
+							$stmt->execute();
+							$columns = $stmt->fetchAll(PDO::FETCH_COLUMN);
+							
+							// Construire la requête d'insertion
+							$columnList = implode(', ', array_map(function($col) { return "`$col`"; }, $columns));
+							
+							$stmt = $pdo->prepare("
+								INSERT INTO `$table` ($columnList) 
+								SELECT $columnList FROM temp_$table
+							");
+							$stmt->execute();
+							
+							// Réinitialiser l'auto-increment
+							$stmt = $pdo->prepare("ALTER TABLE `$table` AUTO_INCREMENT = " . ($rowCount + 1));
+							$stmt->execute();
+							
+							// Supprimer la table temporaire
+							$stmt = $pdo->prepare("DROP TEMPORARY TABLE IF EXISTS temp_$table");
+							$stmt->execute();
+							
+							$resetCount++;
+						}
+					}
+				} catch (Exception $e) {
+					// Ignorer les erreurs pour les tables qui n'existent pas
+				}
+			}
+			
+			$toast = ['type' => 'success', 'message' => "✅ Réinitialisation terminée ! $resetCount tables ont été réorganisées."];
+		}
 	} catch (Throwable $e) {
 		$toast = ['type' => 'danger', 'message' => $e->getMessage()];
 	}
@@ -228,6 +306,65 @@ try {
 
 // Historique des connexions (20 derniers)
 $history = $pdo->query('SELECT lh.*, u.username FROM login_history lh LEFT JOIN users u ON u.id = lh.user_id ORDER BY lh.logged_at DESC LIMIT 20')->fetchAll() ?: [];
+
+// Informations sur les auto-increments
+$autoIncrementTables = [
+    'categories',
+    'notifications', 
+    'alertes',
+    'budgets',
+    'clients',
+    'commandes',
+    'depenses',
+    'fournisseurs',
+    'login_history',
+    'mouvements',
+    'roles_custom',
+    'sales',
+    'sales_items',
+    'stocks',
+    'transactions',
+    'users'
+];
+
+$autoIncrementData = [];
+foreach ($autoIncrementTables as $table) {
+    try {
+        // Vérifier si la table existe
+        $stmt = $pdo->prepare("SHOW TABLES LIKE ?");
+        $stmt->execute([$table]);
+        
+        if ($stmt->rowCount() > 0) {
+            // Obtenir le nombre de lignes
+            $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM `$table`");
+            $stmt->execute();
+            $rowCount = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+            
+            // Obtenir l'auto-increment actuel
+            $stmt = $pdo->prepare("SHOW TABLE STATUS LIKE ?");
+            $stmt->execute([$table]);
+            $status = $stmt->fetch(PDO::FETCH_ASSOC);
+            $autoIncrement = $status['Auto_increment'];
+            
+            // Obtenir le plus grand ID
+            $stmt = $pdo->prepare("SELECT MAX(id) as max_id FROM `$table`");
+            $stmt->execute();
+            $maxId = $stmt->fetch(PDO::FETCH_ASSOC)['max_id'];
+            
+            $hasGaps = $rowCount > 0 && $autoIncrement > ($maxId + 1);
+            
+            $autoIncrementData[] = [
+                'name' => $table,
+                'row_count' => $rowCount,
+                'auto_increment' => $autoIncrement,
+                'max_id' => $maxId ?: 0,
+                'has_gaps' => $hasGaps
+            ];
+        }
+    } catch (Exception $e) {
+        // Ignorer les erreurs pour les tables qui n'existent pas
+    }
+}
 
 // Rendu
 ob_start();
@@ -306,6 +443,9 @@ ob_start();
 		</li>
 		<li class="nav-item" role="presentation">
 			<button class="nav-link" id="security-tab" data-bs-toggle="tab" data-bs-target="#security" type="button" role="tab" aria-controls="security" aria-selected="false"><i class="fas fa-user-shield"></i> Sécurité & utilisateurs</button>
+		</li>
+		<li class="nav-item" role="presentation">
+			<button class="nav-link" id="database-tab" data-bs-toggle="tab" data-bs-target="#database" type="button" role="tab" aria-controls="database" aria-selected="false"><i class="fas fa-database"></i> Base de données</button>
 		</li>
 		<li class="nav-item" role="presentation">
 			<button class="nav-link" id="account-tab" data-bs-toggle="tab" data-bs-target="#account" type="button" role="tab" aria-controls="account" aria-selected="false"><i class="fas fa-user-cog"></i> Compte administrateur</button>
@@ -497,7 +637,77 @@ ob_start();
 			</div>
 		</div>
 
-		<!-- Onglet 4: Compte administrateur -->
+		<!-- Onglet 4: Base de données -->
+		<div class="tab-pane fade" id="database" role="tabpanel" aria-labelledby="database-tab">
+			<div class="card shadow-lg rounded-3">
+				<div class="card-body">
+					<h5 class="card-title mb-3"><i class="fas fa-database"></i> Gestion des Auto-Increments</h5>
+					
+					<div class="alert alert-warning">
+						<h6><i class="fas fa-exclamation-triangle"></i> Attention !</h6>
+						<p class="mb-2">Cette opération va réorganiser tous les IDs des tables pour éliminer les "trous" dans la séquence. Cela peut avoir des conséquences importantes :</p>
+						<ul class="mb-0">
+							<li>Les IDs existants seront modifiés</li>
+							<li>Si vous avez des références externes vers ces IDs, elles devront être mises à jour</li>
+							<li>Cette opération est irréversible</li>
+							<li>Il est recommandé de faire une sauvegarde avant de procéder</li>
+						</ul>
+					</div>
+
+					<div class="table-responsive">
+						<table class="table table-hover align-middle">
+							<thead class="table-light">
+								<tr>
+									<th>Table</th>
+									<th>Lignes</th>
+									<th>Auto-Increment</th>
+									<th>ID Max</th>
+									<th>État</th>
+								</tr>
+							</thead>
+							<tbody>
+								<?php if (empty($autoIncrementData)): ?>
+									<tr><td colspan="5" class="text-center text-muted">Aucune table trouvée</td></tr>
+								<?php else: foreach ($autoIncrementData as $table): ?>
+									<tr>
+										<td><strong><?php echo htmlspecialchars($table['name']); ?></strong></td>
+										<td><?php echo $table['row_count']; ?></td>
+										<td><?php echo $table['auto_increment']; ?></td>
+										<td><?php echo $table['max_id']; ?></td>
+										<td>
+											<?php if ($table['row_count'] == 0): ?>
+												<span class="badge bg-success">✅ Vide</span>
+											<?php elseif ($table['has_gaps']): ?>
+												<span class="badge bg-warning">⚠️ Trous détectés</span>
+											<?php else: ?>
+												<span class="badge bg-success">✅ OK</span>
+											<?php endif; ?>
+										</td>
+									</tr>
+								<?php endforeach; endif; ?>
+							</tbody>
+						</table>
+					</div>
+
+					<div class="text-center mt-4">
+						<form method="POST" onsubmit="return confirm('Êtes-vous sûr de vouloir réorganiser tous les IDs ? Cette opération est irréversible !');">
+							<input type="hidden" name="action" value="reset_auto_increment">
+							<button type="submit" class="btn btn-danger">
+								<i class="fas fa-sync-alt"></i> Réorganiser tous les IDs
+							</button>
+						</form>
+					</div>
+
+					<div class="mt-4">
+						<h6><i class="fas fa-info-circle"></i> Informations</h6>
+						<p class="text-muted mb-2">Les "trous" dans les séquences d'IDs sont normaux après suppression d'éléments. Ils n'affectent pas le fonctionnement de l'application, mais peuvent être corrigés si nécessaire.</p>
+						<p class="text-muted mb-0">Pour tester l'auto-increment, vous pouvez ajouter un nouvel élément dans n'importe quelle section de l'application et vérifier que l'ID est bien le suivant dans la séquence.</p>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Onglet 5: Compte administrateur -->
 		<div class="tab-pane fade" id="account" role="tabpanel" aria-labelledby="account-tab">
 			<div class="card shadow-lg rounded-3">
 				<div class="card-body">
