@@ -308,6 +308,33 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     $message_type = "error";
                 }
                 break;
+                
+            case 'add_category':
+                $nom = trim($_POST['nom']);
+                $description = trim($_POST['description'] ?? '');
+                $couleur = trim($_POST['couleur'] ?? '#007bff');
+                
+                if (empty($nom)) {
+                    $message = "Le nom de la catégorie est obligatoire.";
+                    $message_type = "error";
+                    break;
+                }
+                
+                try {
+                    $pdo = Database::getConnection();
+                    $stmt = $pdo->prepare("INSERT INTO categories (nom, description, couleur) VALUES (?, ?, ?)");
+                    if ($stmt->execute([$nom, $description, $couleur])) {
+                        $message = "Catégorie créée avec succès !";
+                        $message_type = "success";
+                    } else {
+                        $message = "Erreur lors de la création de la catégorie.";
+                        $message_type = "error";
+                    }
+                } catch (Exception $e) {
+                    $message = "Erreur lors de la création de la catégorie : " . $e->getMessage();
+                    $message_type = "error";
+                }
+                break;
         }
     }
 }
@@ -624,9 +651,9 @@ renderStatsGrid($stockStats);
                 ['key' => 'categorie', 'label' => 'Catégorie', 'sortable' => true, 'type' => 'text'],
                 ['key' => 'quantite', 'label' => 'Quantité', 'sortable' => true, 'type' => 'number', 'class' => 'text-center'],
                 ['key' => 'seuil', 'label' => 'Seuil', 'sortable' => true, 'type' => 'number', 'class' => 'text-center'],
-                ['key' => 'prix_achat', 'label' => 'Prix achat (€)', 'sortable' => true, 'type' => 'text', 'class' => 'text-right'],
-                ['key' => 'prix_vente', 'label' => 'Prix vente (€)', 'sortable' => true, 'type' => 'text', 'class' => 'text-right'],
-                ['key' => 'marge', 'label' => 'Marge (€)', 'sortable' => true, 'type' => 'text', 'class' => 'text-right'],
+                            ['key' => 'prix_achat', 'label' => 'Prix achat ($)', 'sortable' => true, 'type' => 'text', 'class' => 'text-right'],
+            ['key' => 'prix_vente', 'label' => 'Prix vente ($)', 'sortable' => true, 'type' => 'text', 'class' => 'text-right'],
+            ['key' => 'marge', 'label' => 'Marge ($)', 'sortable' => true, 'type' => 'text', 'class' => 'text-right'],
                 ['key' => 'created_at', 'label' => 'Date d\'ajout', 'sortable' => true, 'type' => 'datetime']
             ],
             'actions' => [
@@ -711,7 +738,33 @@ renderStatsGrid($stockStats);
                 
                 <div class="form-group">
                     <label class="form-label" for="categorie">Catégorie</label>
-                    <input type="text" id="categorie" name="categorie" class="form-control" required>
+                    <div style="display: flex; gap: 10px; align-items: end;">
+                        <select id="categorie" name="categorie" class="form-control" required style="flex: 1;">
+                            <option value="">Sélectionner une catégorie</option>
+                            <?php
+                            // Récupérer les catégories depuis la base de données
+                            try {
+                                $pdo = Database::getConnection();
+                                $stmt = $pdo->prepare("SELECT id, nom FROM categories ORDER BY nom ASC");
+                                $stmt->execute();
+                                $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                                
+                                foreach ($categories as $category) {
+                                    echo '<option value="' . htmlspecialchars($category['nom']) . '">' . htmlspecialchars($category['nom']) . '</option>';
+                                }
+                            } catch (Exception $e) {
+                                // En cas d'erreur, utiliser des catégories par défaut
+                                $defaultCategories = ['Fournitures scolaires', 'Équipements', 'Transport', 'Maintenance', 'Ventes'];
+                                foreach ($defaultCategories as $category) {
+                                    echo '<option value="' . htmlspecialchars($category) . '">' . htmlspecialchars($category) . '</option>';
+                                }
+                            }
+                            ?>
+                        </select>
+                        <button type="button" class="btn btn-outline" onclick="openNewCategoryModal()" style="white-space: nowrap;">
+                            <i class="fas fa-plus"></i> Nouvelle
+                        </button>
+                    </div>
                 </div>
                 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-lg);">
@@ -728,12 +781,12 @@ renderStatsGrid($stockStats);
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-lg);">
                     <div class="form-group">
-                        <label class="form-label" for="prix_achat">Prix d'achat (€)</label>
+                        <label class="form-label" for="prix_achat">Prix d'achat ($)</label>
                         <input type="number" step="0.01" id="prix_achat" name="prix_achat" class="form-control" min="0" required>
                     </div>
                     
                     <div class="form-group">
-                        <label class="form-label" for="prix_vente">Prix de vente (€)</label>
+                        <label class="form-label" for="prix_vente">Prix de vente ($)</label>
                         <input type="number" step="0.01" id="prix_vente" name="prix_vente" class="form-control" min="0" required>
                     </div>
                 </div>
@@ -775,6 +828,43 @@ renderStatsGrid($stockStats);
     </div>
 </div>
 
+<!-- Modal pour créer une nouvelle catégorie -->
+<div id="newCategoryModal" class="modal">
+    <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <i class="fas fa-plus-circle"></i> Nouvelle Catégorie
+            </h3>
+            <button class="modal-close" onclick="closeModal('newCategoryModal')">&times;</button>
+        </div>
+        <form id="newCategoryForm" method="POST">
+            <input type="hidden" name="action" value="add_category">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label" for="new_category_name">Nom de la catégorie *</label>
+                    <input type="text" id="new_category_name" name="nom" class="form-control" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="new_category_description">Description</label>
+                    <textarea id="new_category_description" name="description" class="form-control" rows="3" placeholder="Description optionnelle de la catégorie"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="new_category_color">Couleur</label>
+                    <input type="color" id="new_category_color" name="couleur" class="form-control" value="#007bff" style="width: 100px; height: 40px;">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-ghost" onclick="closeModal('newCategoryModal')">Annuler</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Créer la catégorie
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
     <script>
         // Helpers modales
         function openModal(id){
@@ -800,6 +890,41 @@ renderStatsGrid($stockStats);
             document.getElementById('stockId').value = '';
             openModal('stockModal');
         }
+        
+        // Ouvrir modal nouvelle catégorie
+        function openNewCategoryModal() {
+            document.getElementById('newCategoryForm').reset();
+            openModal('newCategoryModal');
+        }
+        
+        // Gestionnaire pour le formulaire de nouvelle catégorie
+        document.addEventListener('DOMContentLoaded', function() {
+            const newCategoryForm = document.getElementById('newCategoryForm');
+            if (newCategoryForm) {
+                newCategoryForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    const formData = new FormData(this);
+                    
+                    fetch('', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.text())
+                    .then(() => {
+                        // Fermer la modal
+                        closeModal('newCategoryModal');
+                        
+                        // Recharger la page pour mettre à jour la liste des catégories
+                        location.reload();
+                    })
+                    .catch(error => {
+                        console.error('Erreur:', error);
+                        alert('Erreur lors de la création de la catégorie');
+                    });
+                });
+            }
+        });
 
         // Ouvrir formulaire d'édition
         function openEditModal(id) {

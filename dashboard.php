@@ -138,8 +138,8 @@ $dashboardStats = [
     ],
     [
         'title' => 'Budget mensuel',
-        'value' => '€4 746',
-        'icon' => 'fas fa-euro-sign',
+                    'value' => '$4 746',
+        'icon' => 'fas fa-dollar-sign',
         'type' => 'success',
         'change' => '+8.2%',
         'changeType' => 'negative',
@@ -253,7 +253,7 @@ try {
 
     $row = $pdo->query('SELECT SUM(montant) AS t FROM depenses')->fetch();
     $totalExpenses = (float) ($row['t'] ?? 0);
-    $dashboardStats[2]['value'] = '€' . number_format($totalExpenses, 0, ',', ' ');
+            $dashboardStats[2]['value'] = '$' . number_format($totalExpenses, 0, ',', ' ');
     // Activités récentes depuis mouvements
     try {
         $sqlMov = 'SELECT m.id, m.utilisateur AS user, m.action, m.date_mouvement AS date, s.nom_article AS item
@@ -377,7 +377,7 @@ $dashboardStats[] = [
     'type' => 'success',
     'change' => '',
     'changeType' => 'positive',
-    'subtitle' => 'Montant: €' . number_format($todaySalesAmount, 2, ',', ' '),
+                'subtitle' => 'Montant: $' . number_format($todaySalesAmount, 2, ',', ' '),
     'link' => '/pos.php'
 ];
 
@@ -464,7 +464,7 @@ ob_start();
                         <td>#<?php echo (int)($r['id'] ?? 0); ?></td>
                         <td><?php echo htmlspecialchars((string)($r['client_name'] ?? '')); ?></td>
                         <td><?php echo htmlspecialchars((string)($r['payment_method'] ?? '-')); ?></td>
-                        <td><?php echo number_format((float)($r['total'] ?? 0), 2, ',', ' '); ?> €</td>
+                        <td><?php echo number_format((float)($r['total'] ?? 0), 2, ',', ' '); ?> $</td>
                         <td><?php echo htmlspecialchars((string)($r['created_at'] ?? '')); ?></td>
                     </tr>
                     <?php endforeach; else: ?>
@@ -600,7 +600,7 @@ function pageInit() {
             data: {
                 labels: <?= json_encode(array_column($monthlyExpenses, 'month')) ?>,
                 datasets: [{
-                    label: 'Dépenses (€)',
+                    label: 'Dépenses ($)',
                     data: <?= json_encode(array_column($monthlyExpenses, 'amount')) ?>,
                     borderColor: '#1E88E5',
                     backgroundColor: 'rgba(30, 136, 229, 0.1)',
@@ -629,7 +629,7 @@ function pageInit() {
                         },
                         ticks: {
                             callback: function(value) {
-                                return '€' + value.toLocaleString();
+                                return '$' + value.toLocaleString();
                             }
                         }
                     },
@@ -681,7 +681,7 @@ function pageInit() {
             data: {
                 labels: <?= json_encode(array_column($salesByMonth, 'month')) ?>,
                 datasets: [{
-                    label: 'Ventes (€)',
+                    label: 'Ventes ($)',
                     data: <?= json_encode(array_map(fn($r) => (float)$r['amount'], $salesByMonth)) ?>,
                     backgroundColor: 'rgba(16, 185, 129, 0.2)',
                     borderColor: '#10B981',
@@ -700,7 +700,7 @@ function pageInit() {
                         beginAtZero: true,
                         grid: { color: 'rgba(0, 0, 0, 0.05)' },
                         ticks: {
-                            callback: function(value) { return '€' + value.toLocaleString(); }
+                            callback: function(value) { return '$' + value.toLocaleString(); }
                         }
                     },
                     x: { grid: { display: false } }

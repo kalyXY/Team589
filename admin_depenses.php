@@ -519,7 +519,7 @@ ob_start();
                         <i class="fas fa-money-bill-wave"></i>
                     </div>
                     <div class="stat-content">
-                        <h3 id="totalDepenses">0.00 €</h3>
+                        <h3 id="totalDepenses">0.00 $</h3>
                         <p>Total Dépenses</p>
                         <small class="text-muted">Toutes les dépenses confondues</small>
                     </div>
@@ -531,7 +531,7 @@ ob_start();
                         <i class="fas fa-calendar-alt"></i>
                     </div>
                     <div class="stat-content">
-                        <h3 id="depensesMois">0.00 €</h3>
+                        <h3 id="depensesMois">0.00 $</h3>
                         <p>Ce mois</p>
                         <small class="text-muted">Dépenses du mois en cours</small>
                     </div>
@@ -543,7 +543,7 @@ ob_start();
                         <i class="fas fa-chart-line"></i>
                     </div>
                     <div class="stat-content">
-                        <h3 id="depensesAnnee">0.00 €</h3>
+                        <h3 id="depensesAnnee">0.00 $</h3>
                         <p>Cette année</p>
                         <small class="text-muted">Dépenses de l'année en cours</small>
                     </div>
@@ -579,7 +579,7 @@ ob_start();
                         <th><i class="fas fa-hashtag"></i> ID</th>
                         <th><i class="fas fa-calendar"></i> Date</th>
                         <th><i class="fas fa-file-alt"></i> Description</th>
-                        <th><i class="fas fa-euro-sign"></i> Montant</th>
+                        <th><i class="fas fa-dollar-sign"></i> Montant</th>
                         <th><i class="fas fa-tags"></i> Catégorie</th>
                         <th><i class="fas fa-building"></i> Fournisseur</th>
                         <th><i class="fas fa-receipt"></i> Facture</th>
@@ -632,7 +632,7 @@ ob_start();
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="montant" class="form-label">
-                                    <i class="fas fa-euro-sign text-success"></i> Montant (€) *
+                                    <i class="fas fa-dollar-sign text-success"></i> Montant ($) *
                                 </label>
                                 <input type="number" class="form-control" id="montant" name="montant" 
                                        step="0.01" min="0" placeholder="0.00" required>
@@ -742,7 +742,7 @@ ob_start();
                             <span id="deleteDescription" class="text-dark"></span>
                         </div>
                         <div class="col-md-6">
-                            <strong><i class="fas fa-euro-sign"></i> Montant:</strong><br>
+                            <strong><i class="fas fa-dollar-sign"></i> Montant:</strong><br>
                             <span id="deleteMontant" class="text-danger fw-bold"></span>
                         </div>
                     </div>

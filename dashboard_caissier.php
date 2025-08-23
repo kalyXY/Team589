@@ -50,7 +50,7 @@ ob_start();
 	<div class="clients-stats">
 		<div class="client-stat-card">
 			<div class="client-stat-header"><h3 class="client-stat-title">Ventes du jour</h3><div class="client-stat-icon"><i class="fas fa-coins"></i></div></div>
-			<div class="client-stat-value"><?php echo number_format((float)$kpi['total'], 2); ?> €</div>
+			                <div class="client-stat-value"><?php echo number_format((float)$kpi['total'], 2); ?> $</div>
 			<div class="client-stat-subtitle">Chiffre d'affaires</div>
 		</div>
 		<div class="client-stat-card">
@@ -71,7 +71,7 @@ ob_start();
 						<td>#<?php echo (int)$r['id']; ?></td>
 						<td><?php echo htmlspecialchars($r['client_name'] ?? ''); ?></td>
 						<td><?php echo htmlspecialchars($r['payment_method'] ?? '-'); ?></td>
-						<td><?php echo number_format((float)$r['total'], 2, ',', ' '); ?> €</td>
+						                        <td><?php echo number_format((float)$r['total'], 2, ',', ' '); ?> $</td>
 						<td><?php echo htmlspecialchars($r['created_at']); ?></td>
 					</tr>
 					<?php endforeach; ?>

@@ -481,10 +481,10 @@ renderStatsGrid($alertStats);
                             </div>
                             <div class="alert-details">
                                 <div><strong>Catégorie:</strong> <?php echo htmlspecialchars($item['categorie']); ?></div>
-                                <div><strong>Prix achat:</strong> <?php echo number_format((float)$item['prix_achat'], 2, ',', ' '); ?>€</div>
-                                <div><strong>Prix vente:</strong> <?php echo number_format((float)$item['prix_vente'], 2, ',', ' '); ?>€</div>
+                                <div><strong>Prix achat:</strong> <?php echo number_format((float)$item['prix_achat'], 2, ',', ' '); ?>$</div>
+                                <div><strong>Prix vente:</strong> <?php echo number_format((float)$item['prix_vente'], 2, ',', ' '); ?>$</div>
                                 <?php $perte = max(0, (float)$item['prix_vente'] - (float)$item['prix_achat']) * (int)$item['seuil']; ?>
-                                <div><strong>Perte potentielle:</strong> <?php echo number_format($perte, 2, ',', ' '); ?>€</div>
+                                <div><strong>Perte potentielle:</strong> <?php echo number_format($perte, 2, ',', ' '); ?>$</div>
                             </div>
                         </div>
                         
@@ -545,8 +545,8 @@ renderStatsGrid($alertStats);
                                             <small><?php echo htmlspecialchars($order['fournisseur_contact']); ?></small>
                                         </td>
                                         <td><?php echo $order['quantite']; ?></td>
-                                        <td><?php echo number_format($order['prix_unitaire'], 2); ?>€</td>
-                                        <td><?php echo number_format($order['montant_total'], 2); ?>€</td>
+                                                                <td><?php echo number_format($order['prix_unitaire'], 2); ?>$</td>
+                        <td><?php echo number_format($order['montant_total'], 2); ?>$</td>
                                         <td>
                                             <span class="status-badge <?php echo str_replace(' ', '-', $order['statut']); ?>">
                                                 <?php echo ucfirst($order['statut']); ?>
@@ -670,7 +670,7 @@ renderStatsGrid($alertStats);
                 </div>
                 
                 <div class="form-group">
-                    <label for="order_price">Prix unitaire (€)</label>
+                                            <label for="order_price">Prix unitaire ($)</label>
                     <input type="number" id="order_price" name="prix_unitaire" class="form-control" min="0" step="0.01" value="">
                 </div>
                 

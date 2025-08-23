@@ -379,9 +379,9 @@ async function viewHistory(id) {
 			<td>${escapeHtml(r.sale_date || '')}</td>
 			<td>${escapeHtml(r.product_name || '')}</td>
 			<td>${r.quantity || 0}</td>
-			<td>${(parseFloat(r.price || 0)).toFixed(2)} €</td>
-			<td>${lineTotal} €</td>
-			<td>${(parseFloat(r.sale_total || 0)).toFixed(2)} €</td>
+			                    <td>${(parseFloat(r.price || 0)).toFixed(2)} $</td>
+                    <td>${lineTotal} $</td>
+                    <td>${(parseFloat(r.sale_total || 0)).toFixed(2)} $</td>
 		`;
 		body.appendChild(tr);
 	});

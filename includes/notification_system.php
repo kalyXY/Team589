@@ -148,7 +148,7 @@ class NotificationSystem {
      */
     public static function notifyNewSale($saleId, $total, $clientName) {
         $title = "💰 Nouvelle vente enregistrée";
-        $message = "Vente #{$saleId} de " . number_format($total, 2, ',', ' ') . " € pour {$clientName}";
+        $message = "Vente #{$saleId} de " . number_format($total, 2, ',', ' ') . " $ pour {$clientName}";
         
         $data = [
             'sale_id' => $saleId,
@@ -184,7 +184,7 @@ class NotificationSystem {
      */
     public static function notifyExpense($expenseId, $amount, $description) {
         $title = "💸 Dépense importante enregistrée";
-        $message = "Dépense de " . number_format($amount, 2, ',', ' ') . " € : {$description}";
+        $message = "Dépense de " . number_format($amount, 2, ',', ' ') . " $ : {$description}";
         
         $data = [
             'expense_id' => $expenseId,

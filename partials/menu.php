@@ -31,7 +31,7 @@ if ($role === 'admin') {
 	echo '<div class="nav-section-title">Gestion</div>';
 	renderNavItem('stocks.php', 'fas fa-boxes', 'Stocks', $currentPage ?? '');
 	renderNavItem('alerts.php', 'fas fa-exclamation-triangle', 'Alertes & Réappro', $currentPage ?? '');
-	renderNavItem('finances.php', 'fas fa-euro-sign', 'Finances', $currentPage ?? '');
+	    renderNavItem('finances.php', 'fas fa-dollar-sign', 'Finances', $currentPage ?? '');
 	renderNavItem('admin_depenses.php', 'fas fa-money-bill-wave', 'Dépenses', $currentPage ?? '');
 	renderNavItem('clients.php', 'fas fa-user-friends', 'Clients', $currentPage ?? '');
 	renderNavItem('users_admin.php', 'fas fa-users-cog', 'Utilisateurs', $currentPage ?? '');
@@ -67,6 +67,12 @@ if ($role === 'directeur') {
 	renderNavItem('reports.php', 'fas fa-chart-bar', 'Rapports', $currentPage ?? '');
 	echo '</div>';
 }
+
+// Section Compte (pour tous les utilisateurs)
+echo '<div class="nav-section">';
+echo '<div class="nav-section-title">Compte</div>';
+renderNavItem('profile.php', 'fas fa-user-circle', 'Mon Profil', $currentPage ?? '');
+echo '</div>';
 
 // Déconnexion
 echo '<div class="nav-section">';

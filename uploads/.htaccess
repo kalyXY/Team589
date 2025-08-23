@@ -1,0 +1,35 @@
+# Sécurité pour le dossier uploads - Scolaria
+# Permet l'accès aux images tout en bloquant l'exécution de scripts
+
+# Autoriser l'accès aux fichiers d'images
+<FilesMatch "\.(jpg|jpeg|png|gif|webp)$">
+    Order Allow,Deny
+    Allow from all
+</FilesMatch>
+
+# Bloquer l'accès aux scripts et autres fichiers dangereux
+<FilesMatch "\.(php|php3|php4|php5|phtml|pl|py|jsp|asp|sh|cgi)$">
+    Order Deny,Allow
+    Deny from all
+</FilesMatch>
+
+# Bloquer l'accès aux fichiers de configuration
+<FilesMatch "\.(htaccess|htpasswd|ini|log|sh|inc|bak)$">
+    Order Deny,Allow
+    Deny from all
+</FilesMatch>
+
+# Désactiver l'exécution de scripts
+Options -ExecCGI
+Options -Indexes
+
+# Headers de sécurité
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options nosniff
+    Header always set X-Frame-Options DENY
+    Header always set X-XSS-Protection "1; mode=block"
+</IfModule>
+
+# Redirection en cas d'accès non autorisé
+ErrorDocument 403 "Accès interdit"
+ErrorDocument 404 "Fichier non trouvé"

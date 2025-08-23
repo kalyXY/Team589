@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS `notifications` (
 INSERT IGNORE INTO `notifications` (`user_id`, `title`, `message`, `type`, `is_read`, `created_at`) VALUES
 (1, 'Bienvenue sur Scolaria', 'Votre compte a été configuré avec succès. Vous pouvez maintenant utiliser toutes les fonctionnalités de l\'application.', 'info', 0, NOW()),
 (1, 'Stock faible détecté', 'Le stock de "Cahiers 96 pages" est faible (quantité: 5). Veuillez commander de nouveaux stocks.', 'warning', 0, NOW()),
-(1, 'Nouvelle vente enregistrée', 'Une vente de 45.50 € a été enregistrée avec succès. Ticket #2024-001.', 'success', 0, NOW()),
+(1, 'Nouvelle vente enregistrée', 'Une vente de 45.50 $ a été enregistrée avec succès. Ticket #2024-001.', 'success', 0, NOW()),
 (1, 'Maintenance prévue', 'Une maintenance est prévue le 15 décembre de 22h00 à 02h00. L\'application sera temporairement indisponible.', 'info', 0, NOW());
 
 -- Note: Les profils utilisateurs sont déjà dans la table users existante

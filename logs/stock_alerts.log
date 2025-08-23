@@ -4,3 +4,14 @@
 [2025-08-22 17:32:31] [INFO] Début de la vérification des alertes de stock
 [2025-08-22 17:32:31] [ERROR] Erreur lors de la vérification des alertes
 [2025-08-22 17:32:31] [INFO] Script terminé en 0.044 secondes
+[2025-08-22 20:28:18] === Début de la vérification des alertes de stock ===
+[2025-08-22 20:28:18] ✅ Connexion à la base de données établie
+[2025-08-22 20:28:18] 🔍 Vérification des alertes de stock...
+[2025-08-22 20:28:18] 📊 État des stocks: 0 ruptures, 1 stocks faibles
+[2025-08-22 20:28:18] 📢 Envoi des notifications d'alerte...
+[2025-08-22 20:28:18] ✅ 1 notifications d'alerte envoyées
+[2025-08-22 20:28:18] 📋 Rapport généré: 1 alertes totales
+[2025-08-22 20:28:18] 🧹 Nettoyage des anciennes notifications...
+[2025-08-22 20:28:18] ✅ Nettoyage des anciennes notifications terminé
+[2025-08-22 20:28:18] 📊 Statistiques finales: 4 notifications totales, 4 non lues
+[2025-08-22 20:28:18] === Fin de la vérification des alertes de stock ===

@@ -268,7 +268,7 @@ ob_start();
 	<div class="kpi-grid">
 		<div class="kpi-card">
 			<div class="kpi-label">Chiffre d'affaires</div>
-			<div class="kpi-value" id="kpiTotal">4,746.15 €</div>
+			                <div class="kpi-value" id="kpiTotal">4,746.15 $</div>
 		</div>
 		<div class="kpi-card">
 			<div class="kpi-label">Commandes</div>
@@ -276,7 +276,7 @@ ob_start();
 		</div>
 		<div class="kpi-card">
 			<div class="kpi-label">Panier moyen</div>
-			<div class="kpi-value" id="kpiAvg">1,186.54 €</div>
+			                <div class="kpi-value" id="kpiAvg">1,186.54 $</div>
 		</div>
 	</div>
 
@@ -353,9 +353,9 @@ async function loadKpis() {
 	const params = getFilters();
 	const res = await fetch('reports.php?ajax=kpis&' + params.toString());
 	const d = await res.json();
-	document.getElementById('kpiTotal').textContent = (parseFloat(d.total_sales||0)).toFixed(2) + ' €';
+	document.getElementById('kpiTotal').textContent = (parseFloat(d.total_sales||0)).toFixed(2) + ' $';
 	document.getElementById('kpiOrders').textContent = d.orders_count||0;
-	document.getElementById('kpiAvg').textContent = (parseFloat(d.avg_ticket||0)).toFixed(2) + ' €';
+	document.getElementById('kpiAvg').textContent = (parseFloat(d.avg_ticket||0)).toFixed(2) + ' $';
 }
 
 async function loadByPeriod(granularity='day') {
@@ -373,7 +373,7 @@ async function loadByPeriod(granularity='day') {
 		data: {
 			labels,
 			datasets: [
-				{ label: 'Chiffre (€)', data: totals, backgroundColor: 'rgba(59,130,246,0.5)', borderColor: 'rgba(59,130,246,1)', borderWidth: 1 },
+				            { label: 'Chiffre ($)', data: totals, backgroundColor: 'rgba(59,130,246,0.5)', borderColor: 'rgba(59,130,246,1)', borderWidth: 1 },
 				{ label: 'Commandes', data: orders, type: 'line', yAxisID: 'y1', borderColor: 'rgba(16,185,129,1)', backgroundColor: 'rgba(16,185,129,0.2)' }
 			]
 		},
@@ -405,7 +405,7 @@ async function loadTopProducts() {
 	});
 
 	const tbody = document.querySelector('#topProductsTable tbody');
-	tbody.innerHTML = data.map(r => `<tr><td>${escapeHtml(r.product_name||'')}</td><td>${r.quantity_sold||0}</td><td>${(parseFloat(r.revenue||0)).toFixed(2)} €</td></tr>`).join('');
+	tbody.innerHTML = data.map(r => `<tr><td>${escapeHtml(r.product_name||'')}</td><td>${r.quantity_sold||0}</td><td>${(parseFloat(r.revenue||0)).toFixed(2)} $</td></tr>`).join('');
 }
 
 async function loadTopClients() {
@@ -419,12 +419,12 @@ async function loadTopClients() {
 	if (topClientsChart) topClientsChart.destroy();
 	topClientsChart = new Chart(ctx, {
 		type: 'bar',
-		data: { labels, datasets: [{ label: 'Montant (€)', data: spent, backgroundColor: 'rgba(16,185,129,0.5)', borderColor: 'rgba(16,185,129,1)', borderWidth: 1 }] },
+		            data: { labels, datasets: [{ label: 'Montant ($)', data: spent, backgroundColor: 'rgba(16,185,129,0.5)', borderColor: 'rgba(16,185,129,1)', borderWidth: 1 }] },
 		options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
 	});
 
 	const tbody = document.querySelector('#topClientsTable tbody');
-	tbody.innerHTML = data.map(r => `<tr><td>${escapeHtml(r.client_name||'')}</td><td>${r.orders_count||0}</td><td>${(parseFloat(r.total_spent||0)).toFixed(2)} €</td></tr>`).join('');
+	        tbody.innerHTML = data.map(r => `<tr><td>${escapeHtml(r.client_name||'')}</td><td>${r.orders_count||0}</td><td>${(parseFloat(r.total_spent||0)).toFixed(2)} $</td></tr>`).join('');
 }
 
 function updateExportLinks() {

@@ -218,7 +218,7 @@ ob_start();
 			<div class="pos-cart-footer">
 				<div class="pos-total-row">
 					<span>Total</span>
-					<span id="cartTotal">0.00 €</span>
+					                <span id="cartTotal">0.00 $</span>
 				</div>
 				<button id="checkoutBtn" class="btn btn-primary pos-checkout"><i class="fas fa-check"></i> Valider la vente</button>
 				<div id="checkoutMsg" class="pos-message" aria-live="polite"></div>
@@ -231,7 +231,7 @@ ob_start();
 let products = [];
 let cart = [];
 
-function formatPrice(value) { return (parseFloat(value || 0)).toFixed(2) + ' €'; }
+    function formatPrice(value) { return (parseFloat(value || 0)).toFixed(2) + ' $'; }
 
 function renderProducts() {
 	const list = document.getElementById('productsList');

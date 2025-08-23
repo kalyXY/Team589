@@ -79,26 +79,26 @@ th{background:#f3f4f6; text-transform:uppercase; font-size:11px}
 $html .= '<h1>Rapport de ventes</h1>';
 $html .= '<div>Période: ' . $periodText . '</div>';
 $html .= '<div class="kpi">'
-       . '<div><strong>Chiffre d\'affaires:</strong> ' . number_format((float)$kpis['total'], 2, ',', ' ') . ' €</div>'
+       . '<div><strong>Chiffre d\'affaires:</strong> ' . number_format((float)$kpis['total'], 2, ',', ' ') . ' $</div>'
        . '<div><strong>Commandes:</strong> ' . (int)$kpis['orders'] . '</div>'
-       . '<div><strong>Panier moyen:</strong> ' . number_format((float)$kpis['avg_ticket'], 2, ',', ' ') . ' €</div>'
+       . '<div><strong>Panier moyen:</strong> ' . number_format((float)$kpis['avg_ticket'], 2, ',', ' ') . ' $</div>'
        . '</div>';
 
 $html .= '<h2>Ventes par jour</h2><table><thead><tr><th>Date</th><th>Montant</th><th>Commandes</th></tr></thead><tbody>';
 foreach ($byDay as $r) {
-    $html .= '<tr><td>' . htmlspecialchars($r['d']) . '</td><td>' . number_format((float)$r['t'], 2, ',', ' ') . ' €</td><td>' . (int)$r['c'] . '</td></tr>';
+            $html .= '<tr><td>' . htmlspecialchars($r['d']) . '</td><td>' . number_format((float)$r['t'], 2, ',', ' ') . ' $</td><td>' . (int)$r['c'] . '</td></tr>';
 }
 $html .= '</tbody></table>';
 
 $html .= '<h2>Top produits</h2><table><thead><tr><th>Produit</th><th>Quantité</th><th>Chiffre</th></tr></thead><tbody>';
 foreach ($topProd as $r) {
-    $html .= '<tr><td>' . htmlspecialchars($r['name']) . '</td><td>' . (int)$r['qty'] . '</td><td>' . number_format((float)$r['revenue'], 2, ',', ' ') . ' €</td></tr>';
+    $html .= '<tr><td>' . htmlspecialchars($r['name']) . '</td><td>' . (int)$r['qty'] . '</td><td>' . number_format((float)$r['revenue'], 2, ',', ' ') . ' $</td></tr>';
 }
 $html .= '</tbody></table>';
 
 $html .= '<h2>Meilleurs clients</h2><table><thead><tr><th>Client</th><th>Commandes</th><th>Montant</th></tr></thead><tbody>';
 foreach ($topCli as $r) {
-    $html .= '<tr><td>' . htmlspecialchars($r['name'] ?: 'Inconnu') . '</td><td>' . (int)$r['orders'] . '</td><td>' . number_format((float)$r['spent'], 2, ',', ' ') . ' €</td></tr>';
+    $html .= '<tr><td>' . htmlspecialchars($r['name'] ?: 'Inconnu') . '</td><td>' . (int)$r['orders'] . '</td><td>' . number_format((float)$r['spent'], 2, ',', ' ') . ' $</td></tr>';
 }
 $html .= '</tbody></table>';
 

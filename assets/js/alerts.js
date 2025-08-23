@@ -413,7 +413,7 @@ class AlertsManager {
         
         if (quantity && price && totalElement) {
             const total = (parseFloat(quantity.value) || 0) * (parseFloat(price.value) || 0);
-            totalElement.textContent = total.toFixed(2) + '€';
+            totalElement.textContent = total.toFixed(2) + '$';
         }
     }
 }

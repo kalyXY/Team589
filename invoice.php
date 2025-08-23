@@ -87,8 +87,8 @@ $invoiceNo = sprintf('MS-%06d', (int)$s['id']);
             <tr>
                 <td><?php echo htmlspecialchars($r['nom_article'] ?? ''); ?></td>
                 <td><?php echo (int)$r['quantity']; ?></td>
-                <td><?php echo number_format((float)$r['price'], 2, ',', ' '); ?> €</td>
-                <td><strong><?php echo number_format($st, 2, ',', ' '); ?> €</strong></td>
+                                        <td><?php echo number_format((float)$r['price'], 2, ',', ' '); ?> $</td>
+                        <td><strong><?php echo number_format($st, 2, ',', ' '); ?> $</strong></td>
             </tr>
             <?php endforeach; ?>
         </tbody>
@@ -96,13 +96,13 @@ $invoiceNo = sprintf('MS-%06d', (int)$s['id']);
 
     <?php $saleTotal = (float)$s['total']; $discount = max(0.0, $subtotal - $saleTotal); ?>
     <div class="totals">
-        <div style="font-size: 14px;">Sous-total: <strong><?php echo number_format($subtotal, 2, ',', ' '); ?> €</strong></div>
+        <div style="font-size: 14px;">Sous-total: <strong><?php echo number_format($subtotal, 2, ',', ' '); ?> $</strong></div>
         <?php if ($discount > 0): ?>
-        <div style="font-size: 14px;">Remise: <strong>-<?php echo number_format($discount, 2, ',', ' '); ?> €</strong></div>
+        <div style="font-size: 14px;">Remise: <strong>-<?php echo number_format($discount, 2, ',', ' '); ?> $</strong></div>
         <?php endif; ?>
-        <div style="font-size: 16px; margin-top:4px;">Total à payer: <strong><?php echo number_format($saleTotal, 2, ',', ' '); ?> €</strong></div>
+        <div style="font-size: 16px; margin-top:4px;">Total à payer: <strong><?php echo number_format($saleTotal, 2, ',', ' '); ?> $</strong></div>
         <?php if ($paymentMethod): ?>
-        <div style="font-size: 12px; color:#444; margin-top:6px;">Mode de paiement: <strong><?php echo htmlspecialchars($paymentMethod); ?></strong> • Encaissé: <strong><?php echo number_format($amountPaid, 2, ',', ' '); ?> €</strong></div>
+        <div style="font-size: 12px; color:#444; margin-top:6px;">Mode de paiement: <strong><?php echo htmlspecialchars($paymentMethod); ?></strong> • Encaissé: <strong><?php echo number_format($amountPaid, 2, ',', ' '); ?> $</strong></div>
         <?php endif; ?>
     </div>
 

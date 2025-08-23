@@ -260,7 +260,7 @@ function renderTableCell($value, $type, $column, $row) {
             return number_format($value);
             
         case 'currency':
-            return number_format($value, 2) . ' €';
+            return number_format($value, 2) . ' $';
             
         case 'percentage':
             return number_format($value, 1) . '%';

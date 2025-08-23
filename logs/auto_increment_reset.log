@@ -1,0 +1,67 @@
+[2025-08-23 16:07:57] Début de la réinitialisation des auto-incréments
+[2025-08-23 16:07:57] Début du traitement de 16 tables
+[2025-08-23 16:07:57] Traitement de la table: Articles en stock (stocks)
+[2025-08-23 16:07:57]   - Aucun trou détecté, séquence continue
+[2025-08-23 16:07:57] Traitement de la table: Clients (clients)
+[2025-08-23 16:07:57]   - Trous détectés: 1 trou(s)
+[2025-08-23 16:07:57]     * ID 11 à 21
+[2025-08-23 16:07:57]   - ERREUR: Échec de la réinitialisation
+[2025-08-23 16:07:57] Traitement de la table: Fournisseurs (fournisseurs)
+[2025-08-23 16:07:57]   - Trous détectés: 1 trou(s)
+[2025-08-23 16:07:57]     * ID 3 à 3
+[2025-08-23 16:07:57]   - ERREUR: Échec de la réinitialisation
+[2025-08-23 16:07:57] Traitement de la table: Dépenses (depenses)
+[2025-08-23 16:07:57]   - Aucun trou détecté, séquence continue
+[2025-08-23 16:07:57] Traitement de la table: Commandes (commandes)
+[2025-08-23 16:07:57]   - Aucun trou détecté, séquence continue
+[2025-08-23 16:07:57] Traitement de la table: Mouvements de stock (mouvements)
+[2025-08-23 16:07:57]   - Trous détectés: 1 trou(s)
+[2025-08-23 16:07:57]     * ID 1 à 20
+[2025-08-23 16:07:57]   - ERREUR: Échec de la réinitialisation
+[2025-08-23 16:07:57] Traitement de la table: Notifications (notifications)
+[2025-08-23 16:07:57]   - Aucun trou détecté, séquence continue
+[2025-08-23 16:07:57] Traitement de la table: Alertes (alertes)
+[2025-08-23 16:07:57]   - Aucun trou détecté, séquence continue
+[2025-08-23 16:07:57] Traitement de la table: Budgets (budgets)
+[2025-08-23 16:07:57]   - Aucun trou détecté, séquence continue
+[2025-08-23 16:07:57] Traitement de la table: Ventes (sales)
+[2025-08-23 16:07:57]   - Aucun trou détecté, séquence continue
+[2025-08-23 16:07:57] Traitement de la table: Articles vendus (sales_items)
+[2025-08-23 16:07:57]   - Aucun trou détecté, séquence continue
+[2025-08-23 16:07:57] Traitement de la table: Transactions (transactions)
+[2025-08-23 16:07:57]   - Aucun trou détecté, séquence continue
+[2025-08-23 16:07:57] Traitement de la table: Catégories (categories)
+[2025-08-23 16:07:57]   - Trous détectés: 1 trou(s)
+[2025-08-23 16:07:57]     * ID 2 à 2
+[2025-08-23 16:07:57]   - ERREUR: Échec de la réinitialisation
+[2025-08-23 16:07:57] Traitement de la table: Utilisateurs (users)
+[2025-08-23 16:07:57]   - Trous détectés: 1 trou(s)
+[2025-08-23 16:07:57]     * ID 4 à 8
+[2025-08-23 16:07:57]   - ERREUR: Échec de la réinitialisation
+[2025-08-23 16:07:57] Traitement de la table: Historique de connexion (login_history)
+[2025-08-23 16:07:57]   - Aucun trou détecté, séquence continue
+[2025-08-23 16:07:57] Traitement de la table: Rôles personnalisés (roles_custom)
+[2025-08-23 16:07:57]   - Aucun trou détecté, séquence continue
+[2025-08-23 16:07:57] === RÉSUMÉ ===
+[2025-08-23 16:07:57] Tables traitées: 16
+[2025-08-23 16:07:57] Réinitialisations réussies: 0
+[2025-08-23 16:07:57] Erreurs: 5
+[2025-08-23 16:07:57] Séquences continues: 11
+[2025-08-23 16:07:57] === DÉTAILS PAR TABLE ===
+[2025-08-23 16:07:57] stocks: Aucun trou détecté
+[2025-08-23 16:07:57] clients: Erreur
+[2025-08-23 16:07:57] fournisseurs: Erreur
+[2025-08-23 16:07:57] depenses: Aucun trou détecté
+[2025-08-23 16:07:57] commandes: Aucun trou détecté
+[2025-08-23 16:07:57] mouvements: Erreur
+[2025-08-23 16:07:57] notifications: Aucun trou détecté
+[2025-08-23 16:07:57] alertes: Aucun trou détecté
+[2025-08-23 16:07:57] budgets: Aucun trou détecté
+[2025-08-23 16:07:57] sales: Aucun trou détecté
+[2025-08-23 16:07:57] sales_items: Aucun trou détecté
+[2025-08-23 16:07:57] transactions: Aucun trou détecté
+[2025-08-23 16:07:57] categories: Erreur
+[2025-08-23 16:07:57] users: Erreur
+[2025-08-23 16:07:57] login_history: Aucun trou détecté
+[2025-08-23 16:07:57] roles_custom: Aucun trou détecté
+[2025-08-23 16:07:57] Fin de la réinitialisation des auto-incréments

@@ -503,7 +503,7 @@ function exportData() {
 function formatCurrency(amount) {
     return new Intl.NumberFormat('fr-FR', {
         style: 'currency',
-        currency: 'EUR'
+        currency: 'USD'
     }).format(amount);
 }
 

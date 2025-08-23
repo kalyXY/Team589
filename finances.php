@@ -450,14 +450,14 @@ class FinancesManager {
             $html .= '<tr>';
             $html .= '<td>' . date('d/m/Y', strtotime($expense['date'])) . '</td>';
             $html .= '<td>' . htmlspecialchars($expense['description']) . '</td>';
-            $html .= '<td>' . number_format($expense['montant'], 2) . ' €</td>';
+            $html .= '<td>' . number_format($expense['montant'], 2) . ' $</td>';
             $html .= '<td>' . htmlspecialchars($expense['categorie_nom'] ?? 'Non catégorisé') . '</td>';
             $html .= '<td>' . htmlspecialchars($expense['fournisseur'] ?? '') . '</td>';
             $html .= '</tr>';
             $total += $expense['montant'];
         }
         
-        $html .= '<tr><td colspan="2"><strong>TOTAL</strong></td><td><strong>' . number_format($total, 2) . ' €</strong></td><td colspan="2"></td></tr>';
+        $html .= '<tr><td colspan="2"><strong>TOTAL</strong></td><td><strong>' . number_format($total, 2) . ' $</strong></td><td colspan="2"></td></tr>';
         $html .= '</table>';
         
         $pdf->writeHTML($html, true, false, true, false, '');
@@ -634,7 +634,7 @@ ob_start();
                 <i class="fas fa-receipt"></i>
             </div>
         </div>
-        <div class="finance-card-value"><?php echo number_format($indicators['total_depenses_mois'], 2); ?>€</div>
+                        <div class="finance-card-value"><?php echo number_format($indicators['total_depenses_mois'], 2); ?>$</div>
         <div class="finance-card-subtitle"><?php echo $indicators['nombre_depenses']; ?> dépenses</div>
     </div>
     
@@ -645,7 +645,7 @@ ob_start();
                 <i class="fas fa-cash-register"></i>
             </div>
     </div>
-        <div class="finance-card-value"><?php echo number_format($indicators['total_recettes_mois'], 2); ?>€</div>
+                        <div class="finance-card-value"><?php echo number_format($indicators['total_recettes_mois'], 2); ?>$</div>
         <div class="finance-card-subtitle">Ventes</div>
     </div>
 
@@ -656,7 +656,7 @@ ob_start();
                 <i class="fas fa-chart-line"></i>
             </div>
         </div>
-        <div class="finance-card-value"><?php echo number_format($indicators['benefice_net_mois'], 2); ?>€</div>
+                        <div class="finance-card-value"><?php echo number_format($indicators['benefice_net_mois'], 2); ?>$</div>
         <div class="finance-card-subtitle">Recettes - Dépenses</div>
     </div>
     
@@ -671,7 +671,7 @@ ob_start();
             <?php echo $indicators['categorie_max']['nom'] ?? 'Aucune'; ?>
         </div>
         <div class="finance-card-subtitle">
-            <?php echo $indicators['categorie_max'] ? number_format($indicators['categorie_max']['total'], 2) . '€' : '0€'; ?>
+                            <?php echo $indicators['categorie_max'] ? number_format($indicators['categorie_max']['total'], 2) . '$' : '0$'; ?>
         </div>
     </div>
     
@@ -682,7 +682,7 @@ ob_start();
                 <i class="fas fa-coins"></i>
             </div>
         </div>
-        <div class="finance-card-value"><?php echo number_format($indicators['benefice_net_annee'], 2); ?>€</div>
+                        <div class="finance-card-value"><?php echo number_format($indicators['benefice_net_annee'], 2); ?>$</div>
         <div class="finance-card-subtitle">Année <?php echo date('Y'); ?></div>
     </div>
 </div>
@@ -727,7 +727,7 @@ ob_start();
                     </div>
                     
                     <div class="form-group">
-                        <label for="montant">Montant (€) *</label>
+                        <label for="montant">Montant ($) *</label>
                         <input type="number" id="montant" name="montant" class="form-control" step="0.01" min="0.01" required>
                     </div>
                     
@@ -841,7 +841,7 @@ ob_start();
                                             <br><small>Facture: <?php echo htmlspecialchars($expense['facture_numero']); ?></small>
                                         <?php endif; ?>
                                     </td>
-                                    <td class="amount"><?php echo number_format($expense['montant'], 2); ?>€</td>
+                                    <td class="amount"><?php echo number_format($expense['montant'], 2); ?>$</td>
                                     <td>
                                         <?php if ($expense['categorie_nom']): ?>
                                             <span class="category-badge" style="background-color: <?php echo $expense['categorie_couleur']; ?>">
@@ -918,7 +918,7 @@ ob_start();
                         <thead>
                             <tr>
                                 <th>Article</th>
-                                <th>Bénéfice (€)</th>
+                                <th>Bénéfice ($)</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -927,7 +927,7 @@ ob_start();
                         <?php else: foreach ($reports['top_profitable'] as $row): ?>
                             <tr>
                                 <td><?php echo htmlspecialchars($row['nom_article']); ?></td>
-                                <td><?php echo number_format((float)$row['benefice'], 2); ?>€</td>
+                                <td><?php echo number_format((float)$row['benefice'], 2); ?>$</td>
                             </tr>
                         <?php endforeach; endif; ?>
                         </tbody>
@@ -949,8 +949,8 @@ ob_start();
                         <div>
                             <strong><?php echo htmlspecialchars($alert['categorie_nom'] ?? 'Budget global'); ?></strong> - 
                             <?php echo date('F Y', mktime(0, 0, 0, $alert['mois'], 1, $alert['annee'])); ?>:
-                            <?php echo number_format($alert['montant_reel'], 2); ?>€ / <?php echo number_format($alert['montant_prevu'], 2); ?>€
-                            (<?php echo $alert['difference'] >= 0 ? 'Reste: ' . number_format($alert['difference'], 2) . '€' : 'Dépassement: ' . number_format(abs($alert['difference']), 2) . '€'; ?>)
+                                            <?php echo number_format($alert['montant_reel'], 2); ?>$ / <?php echo number_format($alert['montant_prevu'], 2); ?>$
+                (<?php echo $alert['difference'] >= 0 ? 'Reste: ' . number_format($alert['difference'], 2) . '$' : 'Dépassement: ' . number_format(abs($alert['difference']), 2) . '$'; ?>)
                         </div>
                     </div>
                 <?php endforeach; ?>
@@ -986,7 +986,7 @@ ob_start();
                     </div>
                     
                     <div class="form-group">
-                        <label for="budget_montant">Montant prévu (€) *</label>
+                        <label for="budget_montant">Montant prévu ($) *</label>
                         <input type="number" id="budget_montant" name="montant_prevu" class="form-control" step="0.01" min="0.01" required>
                     </div>
                     
@@ -1179,7 +1179,7 @@ ob_start();
                     </div>
                     
                     <div class="form-group">
-                        <label for="edit_montant">Montant (€) *</label>
+                        <label for="edit_montant">Montant ($) *</label>
                         <input type="number" id="edit_montant" name="montant" class="form-control" step="0.01" min="0.01" required>
                     </div>
                     
@@ -1285,7 +1285,7 @@ function initCharts() {
             data: {
                 labels: labels,
                 datasets: [{
-                    label: 'Dépenses (€)',
+                    label: 'Dépenses ($)',
                     data: values,
                     borderColor: '#10B981',
                     backgroundColor: 'rgba(16, 185, 129, 0.1)',
@@ -1306,7 +1306,7 @@ function initCharts() {
                         beginAtZero: true,
                         ticks: {
                             callback: function(value) {
-                                return value + '€';
+                                return value + '$';
                             }
                         }
                     }
@@ -1330,7 +1330,7 @@ function initCharts() {
             data: {
                 labels,
                 datasets: [{
-                    label: 'Recettes (€)',
+                    label: 'Recettes ($)',
                     data: values,
                     backgroundColor: 'rgba(59, 130, 246, 0.2)',
                     borderColor: '#3B82F6',
@@ -1357,7 +1357,7 @@ function initCharts() {
             data: {
                 labels,
                 datasets: [{
-                    label: 'Bénéfice net (€)',
+                    label: 'Bénéfice net ($)',
                     data: values,
                     borderColor: '#F59E0B',
                     backgroundColor: 'rgba(245, 158, 11, 0.1)',
