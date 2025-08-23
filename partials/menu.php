@@ -41,7 +41,6 @@ if ($role === 'admin') {
 	echo '<div class="nav-section-title">Système</div>';
 	renderNavItem('settings.php', 'fas fa-cog', 'Paramètres', $currentPage ?? '');
 	renderNavItem('reports.php', 'fas fa-chart-bar', 'Rapports', $currentPage ?? '');
-	renderNavItem('admin_reset_auto_increment.php', 'fas fa-database', 'Base de données', $currentPage ?? '');
 	echo '</div>';
 }
 
