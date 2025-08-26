@@ -1,0 +1,30 @@
+%% POS Checkout sequence (detailed from pos.php)
+sequenceDiagram
+    actor Caissier as Caissier
+    participant POS_UI as POS UI (pos.php)
+    participant POS_API as POS Backend (pos.php?ajax=checkout)
+    participant DB as MySQL
+    participant Notifs as NotificationSystem
+
+    Caissier->>POS_UI: Ajoute articles / remet client / choisit paiement
+    POS_UI->>POS_API: POST checkout {items, client_id, discount, mode_paiement}
+    POS_API->>DB: BEGIN TRANSACTION
+    POS_API->>DB: validate inputs
+    loop Pour chaque article
+        POS_API->>DB: SELECT stocks FOR UPDATE (quantite, prix_vente, prix_achat, seuil_alerte)
+        POS_API-->>POS_API: Accumule subtotal et coût achat
+        POS_API->>DB: INSERT sales_items
+        POS_API->>DB: UPDATE stocks SET quantite = quantite - qty
+        POS_API->>DB: SELECT stocks (quantite, seuil_alerte)
+        alt Seuil atteint
+            POS_API->>DB: INSERT alertes (low_stock | out_of_stock)
+        end
+    end
+    POS_API-->>POS_API: Calcule discount, total, profit
+    POS_API->>DB: INSERT sales
+    POS_API->>DB: INSERT transactions
+    POS_API->>DB: COMMIT
+    POS_API-->>POS_UI: { ok, sale_id, total, profit, invoice_url }
+    POS_UI-->>Caissier: Affiche total & intérêt, ouvre facture
+    Note over POS_API,Notifs: Des notifications stock peuvent être envoyées en back-office
+

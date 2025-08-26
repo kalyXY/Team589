@@ -1,0 +1,67 @@
+%% Use cases for Scolaria (POS, Alerts, Finances, Notifications)
+flowchart LR
+    %% Actors
+    A[Admin]
+    G[Gestionnaire]
+    C[Caissier]
+    D[Directeur]
+
+    %% Systems
+    subgraph POS[Point de Vente]
+        UC_Checkout([Valider une vente])
+        UC_Search([Rechercher articles])
+        UC_Discount([Appliquer remise])
+        UC_Invoice([Imprimer facture])
+    end
+
+    subgraph ALERTS[Alertes & Réapprovisionnement]
+        UC_ViewAlerts([Consulter alertes stock])
+        UC_UpdateThreshold([Modifier seuil])
+        UC_CreateOrder([Créer commande fournisseur])
+        UC_Receive([Réceptionner commande])
+    end
+
+    subgraph FIN[Finances]
+        UC_ListExpenses([Gérer dépenses])
+        UC_Reports([Consulter rapports])
+        UC_NetProfit([Voir bénéfice net])
+        UC_Budget([Gérer budgets])
+    end
+
+    subgraph NOTIFS[Notifications]
+        UC_ViewNotifs([Voir notifications])
+        UC_MarkRead([Marquer comme lues])
+    end
+
+    %% Actor to UC
+    C --> UC_Checkout
+    C --> UC_Search
+    C --> UC_Discount
+    C --> UC_Invoice
+
+    G --> UC_ViewAlerts
+    G --> UC_UpdateThreshold
+    G --> UC_CreateOrder
+    G --> UC_Receive
+
+    A --> UC_ListExpenses
+    A --> UC_Reports
+    A --> UC_Budget
+    A --> UC_NetProfit
+
+    D --> UC_Reports
+    D --> UC_NetProfit
+    D --> UC_ViewNotifs
+
+    A --> UC_ViewNotifs
+    G --> UC_ViewNotifs
+    C --> UC_ViewNotifs
+    A --> UC_MarkRead
+    G --> UC_MarkRead
+    C --> UC_MarkRead
+
+    %% Cross-module relations
+    UC_Checkout --> UC_NetProfit
+    UC_CreateOrder --> UC_ViewAlerts
+    UC_Receive --> UC_ViewAlerts
+

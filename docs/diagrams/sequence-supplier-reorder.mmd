@@ -1,0 +1,28 @@
+%% Supplier reorder flow (alerts.php)
+sequenceDiagram
+    actor Gestionnaire as Gestionnaire
+    participant UI as Alertes UI (alerts.php)
+    participant AM as AlertsManager
+    participant DB as MySQL
+
+    Gestionnaire->>UI: Ouvre Alertes & Réapprovisionnement
+    UI->>AM: getLowStockItems()
+    AM->>DB: SELECT stocks <= seuil
+    AM-->>UI: Liste des alertes (rupture / faible)
+
+    Gestionnaire->>UI: Ouvre modale Nouvelle Commande
+    UI->>AM: createOrder(article_id, fournisseur_id, quantite, prix, notes)
+    alt prix non fourni
+        AM->>DB: SELECT prix_achat FROM stocks
+    end
+    AM->>DB: INSERT commandes
+    UI-->>Gestionnaire: Confirmation
+
+    Gestionnaire->>UI: Change statut commande -> livrée
+    UI->>AM: updateOrderStatus(order_id, "livrée")
+    AM->>DB: SELECT commande FOR UPDATE
+    AM->>DB: UPDATE commandes SET statut
+    AM->>DB: UPDATE stocks SET quantite = quantite + reçu
+    AM->>DB: INSERT mouvements (Réception commande)
+    UI-->>Gestionnaire: Stocks mis à jour
+

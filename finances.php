@@ -228,30 +228,40 @@ class FinancesManager {
             $stmt->execute([$annee]);
             $depensesParMois = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
-            // Recettes (ventes) par mois
-            try {
-                $sql = "SELECT MONTH(date_vente) AS mois, SUM(COALESCE(v.total, v.quantite * v.prix_unitaire, 0)) AS total
-                        FROM ventes v
-                        WHERE YEAR(date_vente) = ?
-                        GROUP BY MONTH(date_vente)
+            // Recettes (ventes) par mois - via table sales
+            $sql = "SELECT MONTH(created_at) AS mois, SUM(total) AS total
+                    FROM sales
+                    WHERE YEAR(created_at) = ?
+                    GROUP BY MONTH(created_at)
                         ORDER BY mois";
                 $stmt = $this->pdo->prepare($sql);
                 $stmt->execute([$annee]);
-                $recettesParMois = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            } catch (Throwable $e) {
-                $recettesParMois = [];
-            }
+            $recettesParMois = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+            // Bénéfice (profit) des ventes par mois = Σ(qté*(prix_vente - prix_achat))
+            $sql = "SELECT MONTH(sa.created_at) AS mois, SUM(si.quantity * (si.price - COALESCE(st.prix_achat,0))) AS profit
+                    FROM sales sa
+                    JOIN sales_items si ON si.sale_id = sa.id
+                    JOIN stocks st ON st.id = si.product_id
+                    WHERE YEAR(sa.created_at) = ?
+                    GROUP BY MONTH(sa.created_at)
+                    ORDER BY mois";
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([$annee]);
+            $profitParMois = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
             // Bénéfice net par mois
             $mapDep = [];
             foreach ($depensesParMois as $d) { $mapDep[(int)$d['mois']] = (float)$d['total']; }
             $mapRec = [];
             foreach ($recettesParMois as $r) { $mapRec[(int)$r['mois']] = (float)$r['total']; }
+            $mapProfit = [];
+            foreach ($profitParMois as $p) { $mapProfit[(int)$p['mois']] = (float)$p['profit']; }
             $netParMois = [];
             for ($m = 1; $m <= 12; $m++) {
                 $dep = $mapDep[$m] ?? 0.0;
-                $rec = $mapRec[$m] ?? 0.0;
-                $netParMois[] = ['mois' => $m, 'total' => $rec - $dep];
+                $profit = $mapProfit[$m] ?? 0.0;
+                $netParMois[] = ['mois' => $m, 'total' => $profit - $dep];
             }
 
             // Dépenses par catégorie
@@ -265,16 +275,14 @@ class FinancesManager {
             $stmt->execute([$annee]);
             $depensesParCategorie = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-            // Top 5 articles les plus rentables
-            try {
-                $sqlTop = "SELECT s.nom_article, SUM(v.quantite*(v.prix_unitaire - s.prix_achat)) as benefice
-                           FROM ventes v JOIN stocks s ON v.article_id = s.id 
-                           GROUP BY v.article_id, s.nom_article 
-                           ORDER BY benefice DESC LIMIT 5";
+            // Top 5 articles les plus rentables (selon sales_items)
+            $sqlTop = "SELECT st.nom_article, SUM(si.quantity * (si.price - COALESCE(st.prix_achat,0))) AS benefice
+                       FROM sales_items si
+                       JOIN stocks st ON st.id = si.product_id
+                       GROUP BY si.product_id, st.nom_article
+                       ORDER BY benefice DESC
+                       LIMIT 5";
                 $topProfitable = $this->pdo->query($sqlTop)->fetchAll(PDO::FETCH_ASSOC) ?: [];
-            } catch (Throwable $e) {
-                $topProfitable = [];
-            }
             
             return [
                 'depenses_par_mois' => $depensesParMois,
@@ -317,25 +325,37 @@ class FinancesManager {
             $stmt->execute([$currentYear]);
             $totalDepensesAnnee = $stmt->fetchColumn() ?: 0;
 
-            // Recettes (ventes) ce mois
-            try {
-                $sql = "SELECT SUM(COALESCE(v.total, v.quantite * v.prix_unitaire, 0)) FROM ventes v WHERE DATE_FORMAT(date_vente, '%Y-%m') = ?";
+            // Recettes (ventes) ce mois via table sales
+            $sql = "SELECT SUM(total) FROM sales WHERE DATE_FORMAT(created_at, '%Y-%m') = ?";
                 $stmt = $this->pdo->prepare($sql);
                 $stmt->execute([$currentMonth]);
                 $totalRecettesMois = $stmt->fetchColumn() ?: 0;
-            } catch (Throwable $e) {
-                $totalRecettesMois = 0; // Valeur par défaut en cas d'erreur
-            }
+
+            // Profit des ventes ce mois
+            $sql = "SELECT SUM(si.quantity * (si.price - COALESCE(st.prix_achat,0)))
+                    FROM sales sa
+                    JOIN sales_items si ON si.sale_id = sa.id
+                    JOIN stocks st ON st.id = si.product_id
+                    WHERE DATE_FORMAT(sa.created_at, '%Y-%m') = ?";
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([$currentMonth]);
+            $profitVenteMois = (float)($stmt->fetchColumn() ?: 0);
 
             // Recettes cumulées cette année
-            try {
-                $sql = "SELECT SUM(COALESCE(v.total, v.quantite * v.prix_unitaire, 0)) FROM ventes v WHERE YEAR(date_vente) = ?";
+            $sql = "SELECT SUM(total) FROM sales WHERE YEAR(created_at) = ?";
                 $stmt = $this->pdo->prepare($sql);
                 $stmt->execute([$currentYear]);
                 $totalRecettesAnnee = $stmt->fetchColumn() ?: 0;
-            } catch (Throwable $e) {
-                $totalRecettesAnnee = 0; // Valeur par défaut en cas d'erreur
-            }
+
+            // Profit des ventes cumulées cette année
+            $sql = "SELECT SUM(si.quantity * (si.price - COALESCE(st.prix_achat,0)))
+                    FROM sales sa
+                    JOIN sales_items si ON si.sale_id = sa.id
+                    JOIN stocks st ON st.id = si.product_id
+                    WHERE YEAR(sa.created_at) = ?";
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([$currentYear]);
+            $profitVenteAnnee = (float)($stmt->fetchColumn() ?: 0);
             
             // Catégorie la plus coûteuse ce mois
             $sql = "SELECT c.nom, SUM(d.montant) as total 
@@ -360,13 +380,14 @@ class FinancesManager {
                 'total_depenses_annee' => (float)$totalDepensesAnnee,
                 'total_recettes_mois' => (float)$totalRecettesMois,
                 'total_recettes_annee' => (float)$totalRecettesAnnee,
-                'benefice_net_mois' => (float)($totalRecettesMois - $totalDepensesMois),
-                'benefice_net_annee' => (float)($totalRecettesAnnee - $totalDepensesAnnee),
+                'benefice_net_mois' => (float)($profitVenteMois - $totalDepensesMois),
+                'benefice_net_annee' => (float)($profitVenteAnnee - $totalDepensesAnnee),
                 'categorie_max' => $categorieMax,
                 'nombre_depenses' => $nombreDepenses
             ];
         } catch (PDOException $e) {
             error_log("Erreur getFinancialIndicators: " . $e->getMessage());
+            // En cas d'erreur DB, on renvoie un calcul basique recettes - dépenses
             return [
                 'total_depenses_mois' => (float)$totalDepensesMois,
                 'total_depenses_annee' => (float)$totalDepensesAnnee,

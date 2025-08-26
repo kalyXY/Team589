@@ -80,6 +80,7 @@ if (isset($_GET['ajax'])) {
 			$pdo->beginTransaction();
 			try {
 				$subtotal = 0.0; // Sera calculé dynamiquement
+				$costSubtotal = 0.0; // Somme des coûts d'achat pour calculer l'intérêt
 				// Vérification et calcul du sous-total
 				foreach ($items as $it) {
 					$productId = (int)($it['product_id'] ?? 0);
@@ -90,7 +91,7 @@ if (isset($_GET['ajax'])) {
 						throw new RuntimeException('Données article invalides');
 					}
 					// Stock disponible
-					$st = $pdo->prepare('SELECT quantite, COALESCE(prix_vente,0) AS prix_vente, COALESCE(seuil_alerte, 0) AS seuil_alerte FROM stocks WHERE id = ? FOR UPDATE');
+					$st = $pdo->prepare('SELECT quantite, COALESCE(prix_vente,0) AS prix_vente, COALESCE(prix_achat,0) AS prix_achat, COALESCE(seuil_alerte, 0) AS seuil_alerte FROM stocks WHERE id = ? FOR UPDATE');
 					$st->execute([$productId]);
 					$row = $st->fetch();
 					if (!$row) {
@@ -103,6 +104,7 @@ if (isset($_GET['ajax'])) {
 						$price = (float)$row['prix_vente'];
 					}
 					$subtotal += $price * $qty;
+					$costSubtotal += ((float)$row['prix_achat']) * $qty;
 				}
 
 				$discountAmount = 0.0; // Sera calculé dynamiquement
@@ -112,6 +114,7 @@ if (isset($_GET['ajax'])) {
 					$discountAmount = min($subtotal, $discountValue);
 				}
 				$total = max(0.0, $subtotal - $discountAmount);
+				$profit = round($total - $costSubtotal, 2);
 
 				// Insérer la vente (sales)
 				$insSale = $pdo->prepare('INSERT INTO sales (client_id, total) VALUES (:client_id, :total)');
@@ -144,7 +147,7 @@ if (isset($_GET['ajax'])) {
 				$insTxn->execute([$saleId, $modePaiement, $total]);
 
 				$pdo->commit();
-				echo json_encode(['ok' => true, 'sale_id' => $saleId, 'total' => $total, 'invoice_url' => ('invoice.php?id=' . $saleId)]);
+				echo json_encode(['ok' => true, 'sale_id' => $saleId, 'total' => $total, 'profit' => $profit, 'invoice_url' => ('invoice.php?id=' . $saleId)]);
 				exit;
 			} catch (Throwable $e) {
 				if ($pdo->inTransaction()) { $pdo->rollBack(); }
@@ -355,7 +358,8 @@ async function checkout() {
 		const data = await res.json();
 		
 		if (!data.ok) { throw new Error(data.error || 'Erreur inconnue'); }
-		showMsg(`Vente validée. Ticket #${data.sale_id} - Total ${formatPrice(data.total)}`, 'success');
+		const profitTxt = (typeof data.profit !== 'undefined') ? ` • Intérêt ${formatPrice(data.profit)}` : '';
+		showMsg(`Vente validée. Ticket #${data.sale_id} - Total ${formatPrice(data.total)}${profitTxt}`, 'success');
 		if (data.invoice_url) { window.open(data.invoice_url, '_blank'); }
 		cart = []; renderCart(); searchProducts();
 	} catch (e) {
