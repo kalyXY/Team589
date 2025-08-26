@@ -1249,7 +1249,7 @@ ob_start();
 </div>
 
 <!-- JavaScript -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="assets/vendor/chart.js/chart.umd.min.js"></script>
 <script>
 // Données pour les graphiques
 const monthlyExpenses = <?php echo json_encode($reports['depenses_par_mois']); ?>;

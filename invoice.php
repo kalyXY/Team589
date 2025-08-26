@@ -53,7 +53,16 @@ $invoiceNo = sprintf('MS-%06d', (int)$s['id']);
         .stamp { margin-top: 24px; display:inline-block; padding: 8px 12px; border:2px solid #1e40af; color:#1e40af; font-weight:700; }
         @media print { .actions { display:none; } }
     </style>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="assets/js/fa-v5-shim.js"></script>
+    <link rel="stylesheet" href="assets/vendor/fontawesome/css/all.min.css">
+    <script src="assets/js/fa-loader.js"></script>
+    
+    <style>
+    .fa,.fas,.far{font-family:"Font Awesome 6 Free" !important;}
+    .fas{font-weight:900 !important;}
+    .far{font-weight:400 !important;}
+    .fab{font-family:"Font Awesome 6 Brands" !important;font-weight:400 !important;}
+    </style>
 </head>
 <body>
     <div class="actions" style="margin-bottom: 16px; display:flex; gap:8px;">

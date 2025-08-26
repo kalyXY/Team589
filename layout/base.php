@@ -34,11 +34,17 @@ $additionalJS = $additionalJS ?? [];
     <!-- CSS Header Notifications -->
     <link rel="stylesheet" href="assets/css/header-notifications.css">
     
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Font Awesome local first, CDN fallback loaded by fa-loader.js -->
+    <link rel="stylesheet" href="assets/vendor/fontawesome/css/all.min.css">
+    <style>
+    .fa,.fas,.far{font-family:"Font Awesome 6 Free" !important;}
+    .fas{font-weight:900 !important;}
+    .far{font-weight:400 !important;}
+    .fab{font-family:"Font Awesome 6 Brands" !important;font-weight:400 !important;}
+    </style>
     
-    <!-- Chart.js pour les graphiques -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chart.js (local) -->
+    <script src="assets/vendor/chart.js/chart.umd.min.js"></script>
     
     <!-- CSS Additionnels -->
     <?php foreach ($additionalCSS as $css): ?>
@@ -123,6 +129,8 @@ $additionalJS = $additionalJS ?? [];
     
     <!-- JavaScript Principal -->
     <script src="assets/js/main.js"></script>
+    <script src="assets/js/fa-loader.js"></script>
+    <script src="assets/js/fa-v5-shim.js"></script>
     
     <!-- JavaScript Notifications -->
     <script src="assets/js/notifications.js"></script>

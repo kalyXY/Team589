@@ -189,7 +189,15 @@ try {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Réinitialisation Auto-Increment - Scolaria</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="assets/vendor/fontawesome/css/all.min.css" rel="stylesheet">
+    <script src="assets/js/fa-loader.js"></script>
+    <style>
+    .fa,.fas,.far{font-family:"Font Awesome 6 Free" !important;}
+    .fas{font-weight:900 !important;}
+    .far{font-weight:400 !important;}
+    .fab{font-family:"Font Awesome 6 Brands" !important;font-weight:400 !important;}
+    </style>
+    <script src="assets/js/fa-v5-shim.js"></script>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;

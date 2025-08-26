@@ -191,10 +191,10 @@ $currentPage = 'users';
 $pageTitle = 'Gestion des utilisateurs';
 $showSidebar = true;
 $additionalCSS = [
-	'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css'
+	'assets/vendor/bootstrap/css/bootstrap.min.css'
 ];
 $additionalJS = [
-	'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js'
+	'assets/vendor/bootstrap/js/bootstrap.bundle.min.js'
 ];
 
 ob_start();
