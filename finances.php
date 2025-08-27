@@ -380,8 +380,12 @@ class FinancesManager {
                 'total_depenses_annee' => (float)$totalDepensesAnnee,
                 'total_recettes_mois' => (float)$totalRecettesMois,
                 'total_recettes_annee' => (float)$totalRecettesAnnee,
+                // Bénéfice net = marge (profit ventes) - dépenses
                 'benefice_net_mois' => (float)($profitVenteMois - $totalDepensesMois),
                 'benefice_net_annee' => (float)($profitVenteAnnee - $totalDepensesAnnee),
+                // Résultat = recettes - dépenses (souvent demandé)
+                'resultat_net_mois' => (float)($totalRecettesMois - $totalDepensesMois),
+                'resultat_net_annee' => (float)($totalRecettesAnnee - $totalDepensesAnnee),
                 'categorie_max' => $categorieMax,
                 'nombre_depenses' => $nombreDepenses
             ];
@@ -395,6 +399,8 @@ class FinancesManager {
                 'total_recettes_annee' => (float)$totalRecettesAnnee,
                 'benefice_net_mois' => (float)($totalRecettesMois - $totalDepensesMois),
                 'benefice_net_annee' => (float)($totalRecettesAnnee - $totalDepensesAnnee),
+                'resultat_net_mois' => (float)($totalRecettesMois - $totalDepensesMois),
+                'resultat_net_annee' => (float)($totalRecettesAnnee - $totalDepensesAnnee),
                 'categorie_max' => $categorieMax,
                 'nombre_depenses' => $nombreDepenses
             ];
@@ -678,7 +684,7 @@ ob_start();
             </div>
         </div>
                         <div class="finance-card-value"><?php echo number_format($indicators['benefice_net_mois'], 2); ?>$</div>
-        <div class="finance-card-subtitle">Recettes - Dépenses</div>
+        <div class="finance-card-subtitle">Marge - Dépenses</div>
     </div>
     
     <div class="finance-card warning">
@@ -704,6 +710,28 @@ ob_start();
             </div>
         </div>
                         <div class="finance-card-value"><?php echo number_format($indicators['benefice_net_annee'], 2); ?>$</div>
+        <div class="finance-card-subtitle">Année <?php echo date('Y'); ?></div>
+    </div>
+
+    <div class="finance-card success">
+        <div class="finance-card-header">
+            <h3 class="finance-card-title">Résultat (mois)</h3>
+            <div class="finance-card-icon">
+                <i class="fas fa-balance-scale"></i>
+            </div>
+        </div>
+                        <div class="finance-card-value"><?php echo number_format($indicators['resultat_net_mois'], 2); ?>$</div>
+        <div class="finance-card-subtitle">Recettes - Dépenses</div>
+    </div>
+
+    <div class="finance-card success">
+        <div class="finance-card-header">
+            <h3 class="finance-card-title">Résultat (année)</h3>
+            <div class="finance-card-icon">
+                <i class="fas fa-balance-scale-right"></i>
+            </div>
+        </div>
+                        <div class="finance-card-value"><?php echo number_format($indicators['resultat_net_annee'], 2); ?>$</div>
         <div class="finance-card-subtitle">Année <?php echo date('Y'); ?></div>
     </div>
 </div>
