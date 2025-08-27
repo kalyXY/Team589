@@ -87,18 +87,49 @@ class AlertsManager {
      */
     public function createOrder($articleId, $fournisseurId, $quantite, $prixUnitaire = 0, $notes = '') {
         try {
+            $this->pdo->beginTransaction();
+
             // Si prix non fourni, utiliser le prix_achat du stock
             if ($prixUnitaire <= 0) {
                 $stmt = $this->pdo->prepare('SELECT COALESCE(prix_achat,0) FROM stocks WHERE id = ?');
                 $stmt->execute([$articleId]);
                 $prixUnitaire = (float) ($stmt->fetchColumn() ?: 0);
             }
-            $sql = "INSERT INTO commandes (article_id, fournisseur_id, quantite, prix_unitaire, notes, created_by) 
-                    VALUES (?, ?, ?, ?, ?, ?)";
-            $stmt = $this->pdo->prepare($sql);
+
             $createdBy = $_SESSION['username'] ?? 'system';
-            return $stmt->execute([$articleId, $fournisseurId, $quantite, $prixUnitaire, $notes, $createdBy]);
+            $montantTotal = (float) $quantite * (float) $prixUnitaire;
+
+            // Créer la commande
+            $sqlCommande = "INSERT INTO commandes (article_id, fournisseur_id, quantite, prix_unitaire, statut, date_commande, notes)
+                            VALUES (?, ?, ?, ?, 'en attente', NOW(), ?)";
+            $stmtCommande = $this->pdo->prepare($sqlCommande);
+            $stmtCommande->execute([$articleId, $fournisseurId, $quantite, $prixUnitaire, $notes]);
+            $commandeId = (int) $this->pdo->lastInsertId();
+
+            // Récupérer les informations de l'article et du fournisseur pour le libellé
+            $stmtInfo = $this->pdo->prepare('SELECT s.nom_article, f.nom as fournisseur_nom FROM stocks s, fournisseurs f WHERE s.id = ? AND f.id = ?');
+            $stmtInfo->execute([$articleId, $fournisseurId]);
+            $info = $stmtInfo->fetch(PDO::FETCH_ASSOC) ?: [];
+
+            // Créer automatiquement une dépense liée à la commande (même si montant = 0)
+            $description = "Commande fournisseur: " . ($info['nom_article'] ?? 'Article') . " - " . ($info['fournisseur_nom'] ?? 'Fournisseur');
+            $notesDepense = "Commande #{$commandeId} - " . ($notes ?: 'Créée depuis alertes');
+
+            $sqlDepense = "INSERT INTO depenses (description, montant, date, fournisseur, notes, created_by)
+                            VALUES (?, ?, CURDATE(), ?, ?, ?)";
+            $stmtDepense = $this->pdo->prepare($sqlDepense);
+            $stmtDepense->execute([$description, $montantTotal, ($info['fournisseur_nom'] ?? ''), $notesDepense, $createdBy]);
+
+            // Journaliser l'action
+            $stmtLog = $this->pdo->prepare('INSERT INTO mouvements (article_id, action, details, utilisateur) VALUES (?, ?, ?, ?)');
+            $stmtLog->execute([$articleId, 'commande', "Commande fournisseur créée (#{$commandeId})", $createdBy]);
+
+            $this->pdo->commit();
+            return true;
         } catch (PDOException $e) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
             error_log("Erreur createOrder: " . $e->getMessage());
             return false;
         }
@@ -147,7 +178,7 @@ class AlertsManager {
             $this->pdo->beginTransaction();
 
             // Récupérer ancien statut et infos commande
-            $stmt = $this->pdo->prepare('SELECT statut, article_id, quantite FROM commandes WHERE id = ? FOR UPDATE');
+            $stmt = $this->pdo->prepare('SELECT statut, article_id, quantite, prix_unitaire, fournisseur_id FROM commandes WHERE id = ? FOR UPDATE');
             $stmt->execute([$orderId]);
             $order = $stmt->fetch(PDO::FETCH_ASSOC);
             if (!$order) {
@@ -170,6 +201,28 @@ class AlertsManager {
                 // Log mouvement
                 $stmt = $this->pdo->prepare('INSERT INTO mouvements (article_id, action, details, utilisateur) VALUES (?, ?, ?, ?)');
                 $stmt->execute([(int)$order['article_id'], 'ajout', 'Réception commande fournisseur (+'.$order['quantite'].')', $_SESSION['username'] ?? 'system']);
+
+                 // Si pas de dépense créée lors de la commande, en créer une maintenant
+                 $montantTotal = $order['quantite'] * $order['prix_unitaire'];
+                 if ($montantTotal > 0) {
+                     // Vérifier si une dépense existe déjà pour cette commande
+                     $stmt = $this->pdo->prepare('SELECT id FROM depenses WHERE notes LIKE ? LIMIT 1');
+                     $stmt->execute(['%Commande #'.$orderId.'%']);
+                     
+                     if (!$stmt->fetch()) {
+                         // Récupérer les informations de l'article et du fournisseur
+                         $stmt = $this->pdo->prepare('SELECT s.nom_article, f.nom as fournisseur_nom FROM stocks s, fournisseurs f WHERE s.id = ? AND f.id = ?');
+                         $stmt->execute([$order['article_id'], $order['fournisseur_id']]);
+                         $info = $stmt->fetch(PDO::FETCH_ASSOC);
+                         
+                         $description = "Commande fournisseur livrée: " . ($info['nom_article'] ?? 'Article') . " - " . ($info['fournisseur_nom'] ?? 'Fournisseur');
+                         $sqlDepense = "INSERT INTO depenses (description, montant, date, fournisseur, notes, created_by) 
+                                        VALUES (?, ?, CURDATE(), ?, ?, ?)";
+                         $stmtDepense = $this->pdo->prepare($sqlDepense);
+                         $notesDepense = "Commande #$orderId livrée - Réception stock";
+                         $stmtDepense->execute([$description, $montantTotal, $info['fournisseur_nom'] ?? '', $notesDepense, $_SESSION['username'] ?? 'system']);
+                     }
+                 }
             }
 
             $this->pdo->commit();
@@ -191,7 +244,15 @@ class AlertsManager {
             $sql = "SELECT * FROM fournisseurs ORDER BY nom ASC";
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute();
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Debug: log the number of articles found
+            error_log("getAllArticles: Found " . count($result) . " articles");
+            if (empty($result)) {
+                error_log("getAllArticles: No articles found in stocks table");
+            }
+            
+            return $result;
         } catch (PDOException $e) {
             error_log("Erreur getSuppliers: " . $e->getMessage());
             return [];
@@ -391,6 +452,14 @@ $orders = $alertsManager->listOrders();
 $suppliers = $alertsManager->getSuppliers();
 $articles = $alertsManager->getAllArticles();
 $stats = $alertsManager->getAlertStats();
+
+// Debug: Afficher les informations sur les articles
+error_log("Debug: Articles loaded: " . count($articles));
+if (empty($articles)) {
+    error_log("Debug: No articles found in stocks table");
+} else {
+    error_log("Debug: First article: " . print_r($articles[0], true));
+}
 // Début du contenu HTML
 ob_start();
 ?>
@@ -638,17 +707,25 @@ renderStatsGrid($alertStats);
                 
                 <div class="form-group">
                     <label for="order_article_select">Article *</label>
+                    <!-- Debug: Show articles count -->
+                    <small class="text-muted">Articles disponibles: <?php echo count($articles); ?></small>
                     <select id="order_article_select" name="article_id" class="form-control" required>
                         <option value="">Sélectionner un article</option>
-                        <?php foreach ($articles as $article): ?>
-                            <option value="<?php echo $article['id']; ?>" 
-                                    data-stock="<?php echo $article['quantite']; ?>"
-                                    data-seuil="<?php echo $article['seuil_alerte']; ?>">
-                                <?php echo htmlspecialchars($article['nom']); ?> 
-                                (Stock: <?php echo $article['quantite']; ?>, Seuil: <?php echo $article['seuil_alerte']; ?>)
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
+                        <?php if (!empty($articles)): ?>
+                            <?php foreach ($articles as $article): ?>
+                                <option value="<?php echo $article['id']; ?>" 
+                                        data-stock="<?php echo $article['quantite']; ?>"
+                                        data-seuil="<?php echo $article['seuil']; ?>">
+                                    <?php echo htmlspecialchars($article['nom_article']); ?> 
+                                    (Stock: <?php echo $article['quantite']; ?>, Seuil: <?php echo $article['seuil']; ?>)
+                                </option>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <option value="" disabled>Aucun article disponible</option>
+                        <?php endif; ?>
+                    </select><?php if (empty($articles)): ?>
+                        <small class="text-danger">Aucun article trouvé dans la base de données. Vérifiez que la table 'stocks' contient des données.</small>
+                    <?php endif; ?>
                 </div>
                 
                 <div class="form-group">
