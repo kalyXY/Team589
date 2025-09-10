@@ -1,0 +1,70 @@
+%% Authentication flow for Scolaria (login, guards, roles, logout, register)
+sequenceDiagram
+    actor Utilisateur as Utilisateur
+    participant Login as Page Login (login.php)
+    participant Register as Page Inscription (register.php)
+    participant Guard as Helpers Auth (config/auth.php)
+    participant Page as Page Protégée (ex: dashboard.php)
+    participant DB as MySQL (table users)
+
+    %% Ouverture de la page login
+    Utilisateur->>Login: Ouvre /login.php
+    alt Déjà connecté (session user_id & role)
+        Login-->>Guard: landing_for_role(role)
+        Guard-->>Login: chemin tableau de bord
+        Login-->>Utilisateur: HTTP 302 vers dashboard selon rôle
+    else Non connecté
+        Login-->>Utilisateur: Affiche formulaire de connexion
+    end
+
+    %% Soumission du formulaire de connexion
+    Utilisateur->>Login: POST {username, password, remember?}
+    Login->>DB: SELECT id, username, password, role FROM users WHERE username = ?
+    alt password_verify OK
+        Login-->>Login: session_regenerate_id()
+        Login-->>Login: $_SESSION = { user_id, username, role }
+        opt remember me
+            Login-->>Utilisateur: Définit cookie de session longue durée
+        end
+        Login->>Guard: landing_for_role(role)
+        Guard-->>Login: chemin tableau de bord
+        Login-->>Utilisateur: HTTP 302 vers dashboard selon rôle
+    else Échec d'authentification
+        Login-->>Utilisateur: Erreur "Identifiants invalides"
+    end
+
+    %% Accès à une page protégée
+    Utilisateur->>Page: GET /dashboard.php
+    Page->>Guard: require_login()
+    alt Non connecté
+        Guard-->>Utilisateur: HTTP 302 vers /login.php
+    else Connecté
+        Page-->>Page: Lit $_SESSION['role']
+        opt Autorisation par rôles
+            Page->>Guard: require_roles([admin, gestionnaire, ...])
+            alt Rôle interdit
+                Guard-->>Utilisateur: HTTP 302 vers /access_denied.php
+            else Rôle autorisé
+                Page-->>Utilisateur: Contenu autorisé
+            end
+        end
+    end
+
+    %% Déconnexion
+    Utilisateur->>Page: Clique "Déconnexion" (/logout.php)
+    Page-->>Page: Vide $_SESSION et supprime le cookie de session
+    Page-->>Page: session_destroy()
+    Page-->>Utilisateur: HTTP 302 vers /login.php
+
+    %% Inscription (création utilisateur)
+    Utilisateur->>Register: POST {username, email, password, confirm}
+    Register->>DB: Vérifie unicité username/email
+    alt Disponible
+        Register-->>Register: password_hash(password)
+        Register->>DB: INSERT users (username, email, password_hash, role)
+        Register-->>Utilisateur: Succès (peut se connecter)
+    else Déjà utilisé
+        Register-->>Utilisateur: Erreur (username/email déjà pris)
+    end
+
+

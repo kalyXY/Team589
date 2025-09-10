@@ -84,7 +84,7 @@ ob_start();
 			<div class="card-body">
 				<div class="table-responsive">
 					<table class="table">
-						<thead><tr><th>Ticket</th><th>Client</th><th>Paiement</th><th>Total</th><th>Date</th></tr></thead>
+						<thead><tr><th>Ticket</th><th>Client</th><th>Paiement</th><th>Total</th><th>Date</th><th></th></tr></thead>
 						<tbody>
 							<?php foreach ($recentSales as $r): ?>
 							<tr>
@@ -93,6 +93,7 @@ ob_start();
 								<td><?php echo htmlspecialchars($r['payment_method'] ?? '-'); ?></td>
 								                        <td><?php echo number_format((float)$r['total'], 2, ',', ' '); ?> $</td>
 								<td><?php echo htmlspecialchars($r['created_at']); ?></td>
+								<td><a class="btn btn-sm btn-outline" href="sale_detail.php?id=<?php echo (int)$r['id']; ?>"><i class="fas fa-eye"></i></a></td>
 							</tr>
 							<?php endforeach; ?>
 						</tbody>

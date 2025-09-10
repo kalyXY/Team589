@@ -30,6 +30,14 @@ foreach ($txns as $t) { $amountPaid += (float)($t['amount'] ?? 0); }
 
 $clientName = trim(($s['last_name'] ?? '') . ' ' . ($s['first_name'] ?? '')) ?: 'Client par défaut';
 $caissier = (string)($_SESSION['username'] ?? 'caissier');
+// Charger nom d'application pour l'en-tête facture
+$appName = 'Scolaria';
+try {
+    $pdoForName = Database::getConnection();
+    $rowApp = $pdoForName->query('SELECT school_name FROM school_settings WHERE id = 1')->fetch();
+    $candidate = isset($rowApp['school_name']) ? trim((string)$rowApp['school_name']) : '';
+    if ($candidate !== '') { $appName = $candidate; }
+} catch (Throwable $ignore) {}
 $date = date('d/m/Y H:i', strtotime((string)$s['created_at']));
 $invoiceNo = sprintf('MS-%06d', (int)$s['id']);
 
@@ -71,7 +79,7 @@ $invoiceNo = sprintf('MS-%06d', (int)$s['id']);
     </div>
 
     <div class="header">
-        <div class="logo"><i class="fas fa-school"></i> Mama Sophie – Scolaria</div>
+        <div class="logo"><i class="fas fa-school"></i> <?php echo htmlspecialchars($appName); ?></div>
         <div class="meta">
             <div>Facture: <strong><?php echo htmlspecialchars($invoiceNo); ?></strong></div>
             <div>Date: <?php echo htmlspecialchars($date); ?></div>

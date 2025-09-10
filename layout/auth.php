@@ -10,15 +10,26 @@ $pageTitle = $pageTitle ?? 'Scolaria';
 $bodyClass = $bodyClass ?? '';
 $additionalCSS = $additionalCSS ?? [];
 $additionalJS = $additionalJS ?? [];
+
+// Nom de l'application depuis les paramètres
+$appName = 'Scolaria';
+try {
+    if (class_exists('Database')) {
+        $pdoForName = Database::getConnection();
+        $rowApp = $pdoForName->query('SELECT school_name FROM school_settings WHERE id = 1')->fetch();
+        $candidate = isset($rowApp['school_name']) ? trim((string)$rowApp['school_name']) : '';
+        if ($candidate !== '') { $appName = $candidate; }
+    }
+} catch (Throwable $ignore) {}
 ?>
 <!DOCTYPE html>
 <html lang="fr" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Scolaria - Application de gestion logistique scolaire">
+    <meta name="description" content="<?php echo htmlspecialchars($appName); ?> - Application de gestion logistique scolaire">
     <meta name="author" content="Team589">
-    <title><?php echo htmlspecialchars($pageTitle); ?></title>
+    <title><?php echo htmlspecialchars($pageTitle); ?> - <?php echo htmlspecialchars($appName); ?></title>
     
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="assets/images/favicon.ico">

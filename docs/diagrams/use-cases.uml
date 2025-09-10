@@ -1,0 +1,146 @@
+@startuml
+' Scolaria - Use Case Diagram (generated)
+' Actors inferred from code: admin, directeur, caissier, gestionnaire, user (authenticated), client (external)
+' Features from files: login/register/logout, dashboard, POS & invoice, stocks & alerts,
+' suppliers & purchase orders, finances & exports, reports, users admin, settings,
+' notifications, profile
+
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam usecase {
+  BackgroundColor White
+  BorderColor #888
+}
+
+left to right direction
+
+actor "Utilisateur" as User
+actor "Admin" as Admin
+actor "Directeur" as Director
+actor "Caissier" as Cashier
+actor "Gestionnaire" as Manager
+actor "Client" as Client
+
+rectangle "Scolaria" as System {
+  package "Authentification" {
+    usecase "Se connecter\n(login.php)" as UC_Login
+    usecase "Se déconnecter\n(logout.php)" as UC_Logout
+    usecase "Créer un compte\n(register.php)" as UC_Register
+  }
+
+  package "Tableau de bord" {
+    usecase "Voir tableau de bord\n(dashboard*.php)" as UC_Dashboard
+  }
+
+  package "Point de Vente (POS)" {
+    usecase "Rechercher produits\n(pos.php?ajax=search)" as UC_SearchProducts
+    usecase "Gérer panier" as UC_Cart
+    usecase "Valider vente / Checkout\n(pos.php?ajax=checkout)" as UC_Checkout
+    usecase "Générer facture\n(invoice.php)" as UC_Invoice
+    usecase "Gérer clients\n(clients.php)" as UC_Clients
+  }
+
+  package "Stocks & Alertes" {
+    usecase "Consulter alertes stock\n(alerts.php)" as UC_ViewAlerts
+    usecase "Modifier seuil d'alerte" as UC_UpdateThreshold
+    usecase "Créer commande fournisseur" as UC_CreatePO
+    usecase "Gérer fournisseurs" as UC_Suppliers
+  }
+
+  package "Finances" {
+    usecase "Gérer dépenses" as UC_Expenses
+    usecase "Voir indicateurs financiers" as UC_FinKPI
+    usecase "Exporter PDF" as UC_ExportPDF
+    usecase "Exporter CSV/Excel" as UC_ExportCSV
+  }
+
+  package "Rapports" {
+    usecase "Voir rapports ventes\n(reports.php)" as UC_Reports
+    usecase "Exporter rapports PDF" as UC_ReportsPDF
+    usecase "Exporter rapports CSV" as UC_ReportsCSV
+  }
+
+  package "Administration" {
+    usecase "Gérer utilisateurs\n(users_admin.php)" as UC_UsersAdmin
+    usecase "Paramétrer système & rôles\n(settings.php)" as UC_Settings
+    usecase "Réinitialiser auto-incrément\n(admin_reset_auto_increment.php)" as UC_ResetAI
+  }
+
+  package "Profil & Sécurité" {
+    usecase "Voir/éditer profil\n(profile.php)" as UC_Profile
+    usecase "Changer mot de passe" as UC_ChangePassword
+    usecase "Forcer déconnexion globale" as UC_ForceLogoutAll
+  }
+
+  package "Notifications" {
+    usecase "Recevoir notifications\n(includes/get_notifications.php)" as UC_ReceiveNotif
+    usecase "Marquer lue une notification\n(includes/mark_notification_read.php)" as UC_MarkRead
+    usecase "Tout marquer comme lu\n(includes/mark_all_notifications_read.php)" as UC_MarkAllRead
+  }
+}
+
+' Actor to use case mappings
+User --> UC_Login
+User --> UC_Register
+User --> UC_Logout
+User --> UC_Profile
+User --> UC_ChangePassword
+User --> UC_ReceiveNotif
+User --> UC_MarkRead
+User --> UC_MarkAllRead
+
+Admin --> UC_Dashboard
+Admin --> UC_UsersAdmin
+Admin --> UC_Settings
+Admin --> UC_ResetAI
+Admin --> UC_ViewAlerts
+Admin --> UC_UpdateThreshold
+Admin --> UC_CreatePO
+Admin --> UC_Suppliers
+Admin --> UC_Expenses
+Admin --> UC_FinKPI
+Admin --> UC_ExportPDF
+Admin --> UC_ExportCSV
+Admin --> UC_Reports
+Admin --> UC_ReportsPDF
+Admin --> UC_ReportsCSV
+Admin --> UC_Clients
+Admin --> UC_SearchProducts
+Admin --> UC_Cart
+Admin --> UC_Checkout
+Admin --> UC_Invoice
+Admin --> UC_ForceLogoutAll
+
+Director --> UC_Dashboard
+Director --> UC_Reports
+Director --> UC_ReportsPDF
+Director --> UC_ReportsCSV
+
+Cashier --> UC_Dashboard
+Cashier --> UC_SearchProducts
+Cashier --> UC_Cart
+Cashier --> UC_Checkout
+Cashier --> UC_Invoice
+Cashier --> UC_Clients
+
+Manager --> UC_Dashboard
+Manager --> UC_ViewAlerts
+Manager --> UC_UpdateThreshold
+Manager --> UC_CreatePO
+Manager --> UC_Suppliers
+Manager --> UC_Reports
+Manager --> UC_ReportsCSV
+
+Client --> UC_Invoice
+
+' Includes/extends relations
+UC_Checkout --> UC_Invoice : <<include>>
+UC_Reports --> UC_ReportsPDF : <<extend>>
+UC_Reports --> UC_ReportsCSV : <<extend>>
+UC_ViewAlerts --> UC_CreatePO : <<extend>>
+UC_ViewAlerts --> UC_UpdateThreshold : <<extend>>
+UC_Expenses --> UC_ExportPDF : <<extend>>
+UC_Expenses --> UC_ExportCSV : <<extend>>
+
+@enduml
+

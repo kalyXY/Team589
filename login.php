@@ -11,7 +11,7 @@ require_once __DIR__ . '/config/db.php';
 
 // Configuration de la page
 $currentPage = 'login';
-$pageTitle = 'Connexion - Scolaria';
+$pageTitle = 'Connexion';
 $showSidebar = false;
 $additionalCSS = ['assets/css/auth.css'];
 $additionalJS = ['assets/js/auth.js'];
@@ -94,7 +94,15 @@ ob_start();
         <div class="auth-header">
             <div class="auth-logo">
                 <i class="fas fa-graduation-cap"></i>
-                SCOLARIA
+                <?php
+                // Afficher le nom dynamique de l'application
+                try {
+                    $pdoApp = Database::getConnection();
+                    $row = $pdoApp->query('SELECT school_name FROM school_settings WHERE id = 1')->fetch();
+                    $nm = isset($row['school_name']) ? trim((string)$row['school_name']) : '';
+                    echo htmlspecialchars($nm !== '' ? $nm : 'Scolaria');
+                } catch (Throwable $e) { echo 'Scolaria'; }
+                ?>
             </div>
             <h2 class="auth-title">Connexion</h2>
             <p class="auth-subtitle">Accédez à votre espace de gestion scolaire</p>
@@ -182,7 +190,14 @@ ob_start();
         
         <!-- Fonctionnalités -->
         <div class="auth-features">
-            <h4>Fonctionnalités de Scolaria</h4>
+            <h4>Fonctionnalités de <?php
+                try {
+                    $pdoApp2 = Database::getConnection();
+                    $row2 = $pdoApp2->query('SELECT school_name FROM school_settings WHERE id = 1')->fetch();
+                    $nm2 = isset($row2['school_name']) ? trim((string)$row2['school_name']) : '';
+                    echo htmlspecialchars($nm2 !== '' ? $nm2 : 'Scolaria');
+                } catch (Throwable $e) { echo 'Scolaria'; }
+            ?></h4>
             <div class="feature-list">
                 <div class="feature-item">
                     <i class="fas fa-check"></i>
@@ -213,7 +228,14 @@ ob_start();
         
         <!-- Footer -->
         <div class="auth-footer">
-            <p>&copy; 2024 Scolaria - Système de gestion scolaire</p>
+            <p>&copy; 2024 <?php
+                try {
+                    $pdoApp3 = Database::getConnection();
+                    $row3 = $pdoApp3->query('SELECT school_name FROM school_settings WHERE id = 1')->fetch();
+                    $nm3 = isset($row3['school_name']) ? trim((string)$row3['school_name']) : '';
+                    echo htmlspecialchars($nm3 !== '' ? $nm3 : 'Scolaria');
+                } catch (Throwable $e) { echo 'Scolaria'; }
+            ?> - Système de gestion scolaire</p>
             <div class="auth-footer-links">
                 <a href="#" class="footer-link">Aide</a>
                 <a href="#" class="footer-link">Support</a>
